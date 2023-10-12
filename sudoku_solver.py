@@ -53,81 +53,63 @@ def check_couple_validity(sudoku,num_value,num_tuple):
 
     # CHECK LINE
     tmp_line = get_line(sudoku,num_tuple[0])
-    if num_value in tmp_block:
+    if num_value in tmp_line:
         return False
 
     # CHECK ROW
     tmp_row = get_row(sudoku,num_tuple[1])
-    if num_value in tmp_block:
+    if num_value in tmp_row:
         return False
 
     # ELSE
     return True
 
-# def check_value(sudoku,num_value,num_tuple):
-#     # Return true by default
-#     # Check only wrong cases
-# 
-# 
-#     # Get positions
-#     block_line = int(num_tuple[0]/3)
-#     block_row  = int(num_tuple[1]/3)
-#     relative_line = num_tuple[0]%3
-#     relative_row  = num_tuple[1]%3
-# 
-#     # CHECK BLOCK
-#     tmp_block = flatten_list(get_block(sudoku,block_line,block_row))
-#     if num_value in tmp_block:
-#         return False
-#     if tmp_block.count(0) == 1:
-#         return True
-# 
-#     # CHECK LINES
-#     valid_line = 0
-#     block_lines = list(range(3))
-#     block_lines.remove(relative_line)
-# 
-#     # Get row
-#     tmp_row   = get_block(sudoku,block_line,block_row)
-#     tmp_row   = list(map(lambda x: x[relative_row],tmp_row))
-# 
-#     for num_line in block_lines:
-#         # Is other lines occupied in the same block ?
-#         if 0 != tmp_row[num_line]:
-#             valid_line += 1
-#             continue
-# 
-#         # Is other lines occupied in the complete line ? 
-#         if num_value in get_line(sudoku,block_line*3+num_line):
-#             valid_line += 1
-# 
-#     # Cannot decide, skip couple
-#     if valid_line != 2:
-#         return False
-# 
-#     # CHECK ROWS
-#     valid_row = 0
-#     block_rows = list(range(3))
-#     block_rows.remove(relative_row)
-# 
-#     # Get line
-#     tmp_line = get_block(sudoku,block_line,block_row)[relative_line]
-# 
-#     for num_row in block_rows:
-#         # Is other rows occupied in the same block ?
-#         if 0 != tmp_line[num_row]:
-#             valid_row += 1
-#             continue
-# 
-#         # Is other rows occupied in the complete line ?
-#         if num_value in get_row(sudoku,block_row*3+num_row):
-#             valid_row += 1
-# 
-#     # If cannot decide, skip couple
-#     if valid_row != 2:
-#         return False
-#     else:
-#         return True
+def check_unique_couple_per_block(sudoku,couple_list):
+    block_list  = list(map(lambda x: int(x[0]/3)*3+int(x[1]/3), couple_list))
+    unique_list = list()
+    for tmp_couple in couple_list:
+        tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+        if block_list.count(tmp_block) == 1:
+            unique_list.append(tmp_couple)
+            couple_list.remove(tmp_couple)
+
+    return unique_list
+
+def check_unique_couple_per_line(sudoku,couple_list,num_value):
+    unique_list = list()
+    for tmp_couple in couple_list:
+        x,y  = tmp_couple
+        line = get_line(sudoku,x)
+
+        count_validity = 0
+        for row_idx, row_value in enumerate(line):
+            if row_value == 0 and row_idx != y:
+                if check_couple_validity(sudoku, num_value, (x,row_idx)):
+                    count_validity += 1
+
+        if count_validity == 0:
+            unique_list.append(tmp_couple)
+            couple_list.remove(tmp_couple)
+
+    return unique_list
+
+def check_unique_couple_per_row(sudoku,couple_list,num_value):
+    unique_list = list()
+    for tmp_couple in couple_list:
+        x,y = tmp_couple
+        row = get_row(sudoku,y)
+
+        count_validity = 0
+        for line_idx, line_value in enumerate(row):
+            if line_value == 0 and line_idx != x:
+                if check_couple_validity(sudoku, num_value, (line_idx,y)):
+                    count_validity += 1
+
+        if count_validity == 0:
+            unique_list.append(tmp_couple)
+            couple_list.remove(tmp_couple)
+
+    return unique_list
 
 def scan_num(sudoku,num_value):
     # Search potential line
@@ -148,102 +130,39 @@ def scan_num(sudoku,num_value):
     # Filter couple available
     couple_list = list(filter(lambda x: 0 == get_value(sudoku,x), couple_list))
     couple_list = list(filter(lambda x: check_couple_validity(sudoku,num_value,x), couple_list))
-    block_list  = list(map(lambda x: int(x[0]/3)*3+int(x[1]/3), couple_list))
 
-    # Keep unique possibility per block
-    unique_list = list()
-    for tmp_couple in couple_list:
-        tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
-        if block_list.count(tmp_block) == 1:
-            unique_list.append(tmp_couple)
-            couple_list.remove(tmp_couple)
+    for algo in range(3):
+        if   algo == 0:
+            # Filter per block
+            unique_list = check_unique_couple_per_block(sudoku,couple_list)
+        
+        elif algo == 1:
+            # Check per line if num is possible in others cases
+            unique_list = check_unique_couple_per_line(sudoku,couple_list,num_value)
+            # Filter per block
+            unique_list = check_unique_couple_per_block(sudoku,unique_list)
 
-    # Set unique couples
-    for unique_couple in unique_list:
-        set_value(sudoku, num_value, unique_couple)
+        elif algo == 2:
+            # Check per row if num is possible in others cases
+            unique_list = check_unique_couple_per_row(sudoku,couple_list,num_value)
+            # Filter per block
+            unique_list = check_unique_couple_per_block(sudoku,unique_list)
 
-    # Set couple if only one left
-    if len(couple_list) == 1:
-        set_value(sudoku, num_value, couple_list[0])
-        couple_list.remove(couple_list[0])
+        # Set unique couples
+        for unique_couple in unique_list:
+            set_value(sudoku, num_value, unique_couple)
 
-    if num_value == 1:
-        print(couple_list)
+        # Update list
+        couple_list = list(filter(lambda x: check_couple_validity(sudoku,num_value,x), couple_list))
+
+        # Set couple if only one left
+        if len(couple_list) == 1:
+            set_value(sudoku, num_value, couple_list[0])
+            couple_list.remove(couple_list[0])
+            return couple_list
 
     # Return untreat valid list
-    return len(couple_list)
-
-    #print(couple_list)
-    #print(block_list)
-    #print(unique_list)
-    #print('***')
-
-#    print(couple_list)
-#    print(list(map(lambda x: int(x[0]/3)*3+int(x[1]/3), couple_list)))
-
-#    # Treat unique couples
-#    for x in range(len(couple_list)):
-#        # Check couple validity
-#        tmp_list   = list(filter(lambda x: check_value(sudoku,num_value,x),couple_list))
-#        block_list = list(map(lambda x: int(x[0]/3)*3+int(x[1]/3), tmp_list))
-#
-#        print(tmp_list)
-#        print(block_list)
-#        print('$')
-#
-#        # Keep unique couples per block
-#        unique_list = list()
-#
-#        for tmp_couple in tmp_list:
-#            tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
-#            if block_list.count(tmp_block) == 1:
-#                unique_list.append(tmp_couple)
-#
-#        print(unique_list)
-#        print('---')
-#
-#        # Apply values & update couple_list
-#        for valid_couple in unique_list:
-#            set_value(sudoku, num_value, valid_couple)
-#            couple_list.remove(valid_couple)
-#
-#        break
-
-
-        # for tmp_couple in tmp_list:
-        #   tmp_list2 = deepcopy(tmp_list)
-        #   tmp_list2.remove(tmp_couple)
-            
-        #   # Get position
-        #   tmp_x = tmp_couple[0]
-        #   tmp_y = tmp_couple[1]
-        #   tmp_block = int(tmp_x/3)*3+int(tmp_y/3)
-            
-        #   # Check block
-        #   #block_unique = False
-        #   #if not tmp_block in list(map(lambda x: int(x[0]/3)*3+int(x[1]/3), tmp_list2)):
-        #   #   block_unique = True
-
-        #   # Alone in block ?
-        #   #if num_value == 9:
-        #   #   print(tmp_block)
-        #   if list(map(lambda x: int(x[0]/3)*3+int(x[1]/3), tmp_list)).count(tmp_block) == 1:
-        #       valid_list.append(tmp_couple)
-        #       continue
-
-        #   x_unique = False
-        #   if not tmp_x in list(map(lambda x: x[0],tmp_list2)):
-        #       x_unique = True
-
-        #   y_unique = False
-        #   if not tmp_y in list(map(lambda x: x[1],tmp_list2)):
-        #       y_unique = True
-
-        #   if x_unique and y_unique:
-        #       valid_list.append(tmp_couple)
-
-        # if len(valid_list) == 0:
-        #   break
+    return couple_list
 
 def flatten_list(sudoku):
     ret_list = list()
@@ -278,7 +197,7 @@ def get_args():
         description="Sudoku solver"
     )
     parser.add_argument('file')
-    parser.add_argument('-i', '--iteration',type=int,default=15) 
+    parser.add_argument('-i', '--iteration',type=int,default=15)
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -298,25 +217,17 @@ if __name__ == '__main__':
     for i in range(args.iteration):
         print('--------------------------------')
         print('Iteration {}:'.format(i))
-        for x in range(1,10):
-            previous_remain = 0
-            # Scan num at most 9 times
-            for retry in range(9):
-                remain_values = scan_num(sudoku_list,x)
-                if remain_values == 0:
-                    break
-                # current remain = last remain
-                if retry > 0:
-                    if previous_remain  == remain_values:
-                        break
-                # Save remain
-                previous_remain = remain_values
 
+        # For each num
+        for num in range(1,10):
+            remain_values = scan_num(sudoku_list,num)
+
+        print('--------------------------------')
+        print_sudoku(sudoku_list)
+        print_remain_values(sudoku_list)
+        print("")
+
+        # Check if remain_values
         tmp_dict = get_remain_values(sudoku_list)
         if sum(tmp_dict.values()) == 0:
             break
-
-    print('--------------------------------')
-    print_sudoku(sudoku_list)
-    print_remain_values(sudoku_list)
-    print("")
