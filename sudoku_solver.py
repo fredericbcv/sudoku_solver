@@ -204,6 +204,51 @@ def scan_num(sudoku,num_value):
     # Return untreat valid list
     return couple_list
 
+def get_num_per_couples(num_dict):
+    # Create new dict
+    ret_dict = dict()
+    for num_value in num_dict.keys():
+        for tmp_couple in num_dict[num_value]:
+            if not tmp_couple in ret_dict.keys():
+                ret_dict[tmp_couple] = list()
+            ret_dict[tmp_couple].append(num_value)
+
+    # Apply unique possibility
+    unique_list = list()
+    for tmp_couple in ret_dict.keys():
+        if len(ret_dict[tmp_couple]) == 1:
+            unique_list.append(tmp_couple)
+            if get_value(sudoku_list,tmp_couple) == 0:
+                set_value(sudoku_list, ret_dict[tmp_couple][0], tmp_couple)
+
+    # Update ret_dict
+    for tmp_couple in unique_list:
+        ret_dict.pop(tmp_couple)
+
+    return ret_dict
+
+def get_duplicates_num_per_couples(couple_dict):
+    # Keep only duplicates num
+    tmp_dict = dict()
+    for key in couple_dict.keys():
+        if len(couple_dict[key]) == 2:
+            tmp_dict[key] = couple_dict[key]
+
+    # Reverse keys/values
+    reverse_dict = dict()
+    for key in tmp_dict.keys():
+        if not str(tmp_dict[key]) in reverse_dict.keys():
+            reverse_dict[str(tmp_dict[key])] = list()
+        reverse_dict[str(tmp_dict[key])].append(key)
+
+    # Keep duplicate num with at least 2 couples possible
+    tmp_dict = dict()
+    for key in reverse_dict.keys():
+        if len(reverse_dict[key]) > 1:
+            tmp_dict[key] = reverse_dict[key]
+
+    return tmp_dict
+
 def flatten_list(sudoku):
     ret_list = list()
     for item in sudoku:
@@ -265,37 +310,47 @@ if __name__ == '__main__':
             # Save couple possibility for each num
             num_dict[num_value] = remain_couples
 
-        # Create a dict to show possibility per couple
-        couple_dict = dict()
-        for num_value in num_dict.keys():
-            for tmp_couple in num_dict[num_value]:
-                if not tmp_couple in couple_dict.keys():
-                    couple_dict[tmp_couple] = list()
-                couple_dict[tmp_couple].append(num_value)
+        # For each couple get nums possibility
+        couple_dict = get_num_per_couples(num_dict)
 
-        # Apply unique possibility
-        unique_list = list()
-        for tmp_couple in couple_dict.keys():
-            if len(couple_dict[tmp_couple]) == 1:
-                unique_list.append(tmp_couple)
-                if get_value(sudoku_list,tmp_couple) == 0:
-                    set_value(sudoku_list, couple_dict[tmp_couple][0], tmp_couple)
+        # Keep duplicate num
+        duplicate_dict = get_duplicates_num_per_couples(couple_dict)
 
-        # Update couple_dict
-        for tmp_couple in unique_list:
-            couple_dict.pop(tmp_couple)
+        # Keep couples in the same block
+        for key in duplicate_dict.keys():
+            # Create new dict to filter per block
+            tmp_dict = dict()
+            for tmp_couple in duplicate_dict[key]:
+                tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+                if not tmp_block in tmp_dict.keys():
+                    tmp_dict[tmp_block] = list()
+                tmp_dict[tmp_block].append(tmp_couple)
+
+            # Keep element which have at least 2 couple
+            keep_list = list()
+            for key in tmp_dict.keys():
+                if len(tmp_dict[key]) > 1:
+                    keep_list.append(tmp_dict[key])
+
+            for item in keep_list:
+                print(str(item)+"   "+str(couple_dict[item[0]] ) )
 
 
-        # Check duplicates per block
+        #for key in couple_dict.keys():
+        #    print(str(key)+": "+str(couple_dict[key]))
+
+        #print('----')
+
+        #for key in duplicate_dict.keys():
+        #    print(str(key)+": "+str(duplicate_dict[key]))
+
 
 
         # Check triplet per block
 
         # Check combinaison
 
-        #print(num_dict)
-        for key in couple_dict.keys():
-            print(str(key)+": "+str(couple_dict[key]))
+
 
         print('--------------------------------')
         print_sudoku(sudoku_list)
