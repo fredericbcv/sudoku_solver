@@ -4,6 +4,17 @@ import os, sys, json, argparse
 from itertools import product
 from copy import deepcopy
 
+################################################################
+#
+# ########     ###     ######  ####  ######
+# ##     ##   ## ##   ##    ##  ##  ##    ##
+# ##     ##  ##   ##  ##        ##  ##
+# ########  ##     ##  ######   ##  ##
+# ##     ## #########       ##  ##  ##
+# ##     ## ##     ## ##    ##  ##  ##    ##
+# ########  ##     ##  ######  ####  ######
+#
+################################################################
 def get_block(sudoku,num_line,num_row):
     return sudoku[num_line][num_row]
 
@@ -39,6 +50,45 @@ def set_value(sudoku,num_value,num_tuple):
     num_line,num_row = num_tuple
     sudoku[int(num_line/3)][int(num_row/3)][int(num_line%3)][int(num_row%3)] = num_value
 
+def flatten_list(sudoku):
+    ret_list = list()
+    for item in sudoku:
+        if type(item) == list:
+            ret_list += flatten_list(item)
+        else:
+            ret_list.append(item)
+    return ret_list
+
+def get_remain_values(sudoku):
+    flat_list = flatten_list(sudoku)
+    ret_dict = dict()
+    for x in range(1,10):
+        ret_dict[x] = 9 - flat_list.count(x)
+    return ret_dict
+
+def print_remain_values(sudoku):
+    print("Remain values:")
+    flat_list = flatten_list(sudoku)
+    for x in range(1,10):
+        print("  * "+str(x)+" = "+str(9-flat_list.count(x)))
+
+def print_sudoku(sudoku):
+    for line in sudoku:
+        for x in range(3):
+            print(str(line[0][x]) + "  " + str(line[1][x]) + "  " + str(line[2][x]) )
+        print("")
+
+################################################################
+#
+#  ######  ##     ## ########  ######  ##    ##
+# ##    ## ##     ## ##       ##    ## ##   ##
+# ##       ##     ## ##       ##       ##  ##
+# ##       ######### ######   ##       #####
+# ##       ##     ## ##       ##       ##  ##
+# ##    ## ##     ## ##       ##    ## ##   ##
+#  ######  ##     ## ########  ######  ##    ##
+#
+################################################################
 def check_couple_validity(sudoku,num_value,num_tuple):
     # Get positions
     block_line = int(num_tuple[0]/3)
@@ -148,6 +198,17 @@ def check_num_value_in_row_n_column(sudoku,couple_list,num_value):
 
     return unique_list
 
+################################################################
+#
+#  ######   ######     ###    ##    ##         ##    ## ##     ## ##     ##
+# ##    ## ##    ##   ## ##   ###   ##         ###   ## ##     ## ###   ###
+# ##       ##        ##   ##  ####  ##         ####  ## ##     ## #### ####
+#  ######  ##       ##     ## ## ## ##         ## ## ## ##     ## ## ### ##
+#       ## ##       ######### ##  ####         ##  #### ##     ## ##     ##
+# ##    ## ##    ## ##     ## ##   ###         ##   ### ##     ## ##     ##
+#  ######   ######  ##     ## ##    ## ####### ##    ##  #######  ##     ##
+#
+################################################################
 def scan_num(sudoku,num_value):
     # Search potential line
     x_list = list()
@@ -204,6 +265,17 @@ def scan_num(sudoku,num_value):
     # Return untreat valid list
     return couple_list
 
+################################################################
+#
+# ##    ## ##     ## ##     ##       ##  ######   #######  ##     ## ########  ##       ########  ######
+# ###   ## ##     ## ###   ###      ##  ##    ## ##     ## ##     ## ##     ## ##       ##       ##    ##
+# ####  ## ##     ## #### ####     ##   ##       ##     ## ##     ## ##     ## ##       ##       ##
+# ## ## ## ##     ## ## ### ##    ##    ##       ##     ## ##     ## ########  ##       ######    ######
+# ##  #### ##     ## ##     ##   ##     ##       ##     ## ##     ## ##        ##       ##             ##
+# ##   ### ##     ## ##     ##  ##      ##    ## ##     ## ##     ## ##        ##       ##       ##    ##
+# ##    ##  #######  ##     ## ##        ######   #######   #######  ##        ######## ########  ######
+#
+################################################################
 def get_num_per_couples(num_dict):
     # Create new dict
     ret_dict = dict()
@@ -249,34 +321,17 @@ def get_duplicates_num_per_couples(couple_dict):
 
     return tmp_dict
 
-def flatten_list(sudoku):
-    ret_list = list()
-    for item in sudoku:
-        if type(item) == list:
-            ret_list += flatten_list(item)
-        else:
-            ret_list.append(item)
-    return ret_list
-
-def get_remain_values(sudoku):
-    flat_list = flatten_list(sudoku)
-    ret_dict = dict()
-    for x in range(1,10):
-        ret_dict[x] = 9 - flat_list.count(x)
-    return ret_dict
-
-def print_remain_values(sudoku):
-    print("Remain values:")
-    flat_list = flatten_list(sudoku)
-    for x in range(1,10):
-        print("  * "+str(x)+" = "+str(9-flat_list.count(x)))
-
-def print_sudoku(sudoku):
-    for line in sudoku:
-        for x in range(3):
-            print(str(line[0][x]) + "  " + str(line[1][x]) + "  " + str(line[2][x]) )
-        print("")
-
+################################################################
+#
+# ##     ##    ###    #### ##    ##
+# ###   ###   ## ##    ##  ###   ##
+# #### ####  ##   ##   ##  ####  ##
+# ## ### ## ##     ##  ##  ## ## ##
+# ##     ## #########  ##  ##  ####
+# ##     ## ##     ##  ##  ##   ###
+# ##     ## ##     ## #### ##    ##
+#
+################################################################
 def get_args():
     parser = argparse.ArgumentParser(
         description="Sudoku solver"
@@ -313,27 +368,154 @@ if __name__ == '__main__':
         # For each couple get nums possibility
         couple_dict = get_num_per_couples(num_dict)
 
+        #print(couple_dict)
+
+        #print(get_block(sudoku_list,0,2))
+
         # Keep duplicate num
         duplicate_dict = get_duplicates_num_per_couples(couple_dict)
+        for item in duplicate_dict.keys():
+            print(str(item)+": "+str(duplicate_dict[item]))
 
-        # Keep couples in the same block
-        for key in duplicate_dict.keys():
-            # Create new dict to filter per block
-            tmp_dict = dict()
-            for tmp_couple in duplicate_dict[key]:
-                tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
-                if not tmp_block in tmp_dict.keys():
-                    tmp_dict[tmp_block] = list()
-                tmp_dict[tmp_block].append(tmp_couple)
+        # # Filter couples in the same block
+        # exit_flag = False
+        # for key in duplicate_dict.keys():
 
-            # Keep element which have at least 2 couple
-            keep_list = list()
-            for key in tmp_dict.keys():
-                if len(tmp_dict[key]) > 1:
-                    keep_list.append(tmp_dict[key])
+        #     # Create new dict to filter per block
+        #     block_dict = dict()
+        #     for tmp_couple in duplicate_dict[key]:
+        #         tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+        #         if not tmp_block in block_dict.keys():
+        #             block_dict[tmp_block] = list()
+        #         block_dict[tmp_block].append(tmp_couple)
 
-            for item in keep_list:
-                print(str(item)+"   "+str(couple_dict[item[0]] ) )
+        #     # Keep element which have at least 2 couple
+        #     duplicate_list = list()
+        #     for key in block_dict.keys():
+        #         if len(block_dict[key]) > 1:
+        #             duplicate_list += block_dict[key]
+
+            # Scan lines
+            # for tmp_couple in duplicate_list:
+            #     num_values = couple_dict[tmp_couple]
+            #     tmp_block  = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+
+            #     tmp_line = list(filter(lambda x: tmp_couple[0] == x[0], couple_dict.keys()))
+            #     tmp_line = list(filter(lambda x: tmp_block != int(x[0]/3)*3+int(x[1]/3), tmp_line))
+
+            #     print(tmp_line)
+
+            # # Scan row
+            # for tmp_couple in duplicate_list:
+
+            #     print("tmp_couple: "+str(tmp_couple))
+
+            #     num_values = couple_dict[tmp_couple]
+
+            #     print("num_values: "+str(num_values))
+
+            #     tmp_block  = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+
+            #     row_tmp_couple = list(filter(lambda x: tmp_couple[1] == x[1], couple_dict.keys()))
+            #     row_tmp_couple = list(filter(lambda x: tmp_block != int(x[0]/3)*3+int(x[1]/3), row_tmp_couple))
+            #     row_values = list(map(lambda x: couple_dict[x],row_tmp_couple))
+
+            #     print(row_tmp_couple)
+            #     print(row_values)
+
+            #     print('$')
+
+            #     unique_couple = None
+            #     if flatten_list(row_values).count(num_values[0]) == 1:
+            #         for idx,values in enumerate(row_values):
+            #             if num_values[0] in values:
+            #                 unique_couple = row_tmp_couple[idx]
+            #                 break
+
+            #     # Apply value
+            #     if unique_couple != None:
+            #         pass
+            #         #set_value(sudoku_list,num_values[0],unique_couple)
+            #         #set_value(sudoku_list,num_values[1],tmp_couple)
+            #         print(str(num_values[0])+" => "+str(unique_couple))
+            #         exit_flag = True
+            #         break
+
+            #     unique_couple = None
+            #     if flatten_list(row_values).count(num_values[1]) == 1:
+            #         for idx,values in enumerate(row_values):
+            #             if num_values[1] in values:
+            #                 unique_couple = row_tmp_couple[idx]
+            #                 break
+
+            #     # Apply value
+            #     if unique_couple != None:
+            #         pass
+            #         #set_value(sudoku_list,num_values[1],unique_couple)
+            #         #set_value(sudoku_list,num_values[0],tmp_couple)
+            #         print(str(num_values[1])+" => "+str(unique_couple))
+            #         exit_flag = True
+            #         break
+
+            #     print('----')
+
+            # if exit_flag:
+            #     break
+
+            # # Scan lines & rows
+            # for keep_couples in keep_list:
+            #     num_values = couple_dict[keep_couples[0]]
+
+            #     print("num_values: "+str(num_values))
+
+            #     # For each couple
+            #     for tmp_couple in keep_couples:
+                    
+            #         print(tmp_couple)
+
+            #         tmp_block  = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+
+            #         # Keep each line
+            #         tmp_line = list(filter(lambda x: tmp_couple[0] == x[0], couple_dict.keys()))
+            #         # Remove possiblity in the same block
+            #         tmp_line = list(filter(lambda x: tmp_block != int(x[0]/3)*3+int(x[1]/3), tmp_line))
+
+            #         # Keep each row
+            #         tmp_row = list(filter(lambda x: tmp_couple[1] == x[1], couple_dict.keys()))
+            #         # Remove possiblity in the same block
+            #         tmp_row = list(filter(lambda x: tmp_block != int(x[0]/3)*3+int(x[1]/3), tmp_row))
+
+            #         # Check unique possibility
+            #         num_0_unique_list = list()
+            #         num_1_unique_list = list()
+            #         for tmp_couple in (tmp_line+tmp_row):
+            #             if couple_dict[tmp_couple].count(num_values[0]) == 1 and couple_dict[tmp_couple].count(num_values[1]) == 0 :
+            #                 num_0_unique_list.append(tmp_couple)
+
+            #             if couple_dict[tmp_couple].count(num_values[0]) == 0 and couple_dict[tmp_couple].count(num_values[1]) == 1 :
+            #                 num_1_unique_list.append(tmp_couple)
+
+            #         print(str(num_values[0])+":  "+str(num_0_unique_list))
+            #         print(str(num_values[1])+":  "+str(num_1_unique_list))
+
+
+                    # Count possibility
+                    #for num in num_values:
+                    #    print(flatten_list(list(map(lambda x: couple_dict[x],tmp_line+tmp_row))))
+
+                    #print(tmp_row)
+
+
+                    #for item in tmp_line:
+                    #    print( str(item)+" "+str(couple_dict[item]) )
+
+                    #for item in tmp_row:
+                    #    print( str(item)+" "+str(couple_dict[item]) )
+                    # print('----')
+
+                #print(str(keep_couples)+"   "+str( num_values ) )
+
+
 
 
         #for key in couple_dict.keys():
