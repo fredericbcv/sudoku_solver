@@ -368,9 +368,13 @@ if __name__ == '__main__':
         # For each couple get nums possibility
         couple_dict = get_num_per_couples(num_dict)
 
-        #print(couple_dict)
+        for tmp_couple in couple_dict.keys():
+            tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+            
+            if tmp_block == 1:
+                print(str(tmp_couple)+": "+str(couple_dict[tmp_couple]))
 
-        #print(get_block(sudoku_list,0,2))
+        #print(get_block(sudoku_list,0,1))
 
         # Keep duplicate num
         duplicate_dict = get_duplicates_num_per_couples(couple_dict)
