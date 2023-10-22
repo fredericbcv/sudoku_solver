@@ -116,87 +116,6 @@ def check_couple_validity(sudoku,num_value,num_tuple):
     # ELSE
     return True
 
-def check_unique_couple_per_block(sudoku,couple_list):
-    block_list  = list(map(lambda x: int(x[0]/3)*3+int(x[1]/3), couple_list))
-
-    # Create unique list
-    unique_list = list()
-    for tmp_couple in couple_list:
-        tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
-
-        if block_list.count(tmp_block) == 1:
-            unique_list.append(tmp_couple)
-
-    # Update couple list
-    for unique_couple in unique_list:
-        couple_list.remove(unique_couple)
-
-    return unique_list
-
-def check_num_value_possiblity_by_line(sudoku,couple_list,num_value):
-    # Create unique list
-    unique_list = list()
-    for tmp_couple in couple_list:
-        x,y  = tmp_couple
-        line = get_line(sudoku,x)
-
-        count_validity = 0
-        for row_idx, row_value in enumerate(line):
-            if row_value == 0 and row_idx != y:
-                if check_couple_validity(sudoku, num_value, (x,row_idx)):
-                    count_validity += 1
-
-        if count_validity == 0:
-            unique_list.append(tmp_couple)
-
-    # Update couple list
-    for unique_couple in unique_list:
-        couple_list.remove(unique_couple)
-
-    return unique_list
-
-def check_num_value_possiblity_by_row(sudoku,couple_list,num_value):
-    # Create unique list
-    unique_list = list()
-    for tmp_couple in couple_list:
-        x,y = tmp_couple
-        row = get_row(sudoku,y)
-
-        count_validity = 0
-        for line_idx, line_value in enumerate(row):
-            if line_value == 0 and line_idx != x:
-                if check_couple_validity(sudoku, num_value, (line_idx,y)):
-                    count_validity += 1
-
-        if count_validity == 0:
-            unique_list.append(tmp_couple)
-
-    # Update couple list
-    for unique_couple in unique_list:
-        couple_list.remove(unique_couple)
-
-    return unique_list
-
-def check_num_value_in_row_n_column(sudoku,couple_list,num_value):
-    # Create unique list
-    unique_list = list()
-    for tmp_couple in couple_list:
-        
-        # Get line & row
-        x,y = tmp_couple
-        line = get_line(sudoku,x)
-        row = get_row(sudoku,y)
-        tmp_list = set(line+row)
-        tmp_list.remove(0)
-
-        if len(tmp_list) == 8:
-            unique_list.append(tmp_couple)
-
-    # Update couple list
-    for unique_couple in unique_list:
-        couple_list.remove(unique_couple)
-
-    return unique_list
 
 ################################################################
 #
@@ -240,59 +159,25 @@ def get_num_per_couples(num_dict):
             if not tmp_couple in ret_dict.keys():
                 ret_dict[tmp_couple] = list()
             ret_dict[tmp_couple].append(num_value)
+    return ret_dict
 
+def process_unique(sudoku,possibility_dict):
     # Apply unique possibility
     unique_list = list()
-    for tmp_couple in ret_dict.keys():
-        if len(ret_dict[tmp_couple]) == 1:
+    for tmp_couple in possibility_dict.keys():
+        if len(possibility_dict[tmp_couple]) == 1:
             unique_list.append(tmp_couple)
-            if get_value(sudoku_list,tmp_couple) == 0:
-                set_value(sudoku_list, ret_dict[tmp_couple][0], tmp_couple)
+            if get_value(sudoku,tmp_couple) == 0:
+                set_value(sudoku, possibility_dict[tmp_couple][0], tmp_couple)
 
     # Update ret_dict
     for tmp_couple in unique_list:
-        ret_dict.pop(tmp_couple)
+        possibility_dict.pop(tmp_couple)
 
-    return ret_dict
-
-def process_unique(sudoku, num_value, couple_list):
-    ret_value = False
-
-    for algo in range(4):
-        if algo == 1:
-            # Check per line if num is possible in others cases
-            unique_list = check_num_value_possiblity_by_line(sudoku,couple_list,num_value)
-
-        elif algo == 2:
-            # Check per row if num is possible in others cases
-            unique_list = check_num_value_possiblity_by_row(sudoku,couple_list,num_value)
-
-        elif algo == 3:
-            # Check if all number are used in row & column
-            unique_list = check_num_value_in_row_n_column(sudoku,couple_list,num_value)
-
-        # Filter per block
-        if algo == 0:
-            unique_list = check_unique_couple_per_block(sudoku,couple_list)
-        else:
-            unique_list = check_unique_couple_per_block(sudoku,unique_list)
-
-        # Set unique couples
-        for unique_couple in unique_list:
-            ret_value = True
-            set_value(sudoku, num_value, unique_couple)
-
-        # Update list
-        couple_list = list(filter(lambda x: 0 == get_value(sudoku,x), couple_list))
-        couple_list = list(filter(lambda x: check_couple_validity(sudoku,num_value,x), couple_list))
-
-        # Set couple if only one left
-        if len(couple_list) == 1:
-            set_value(sudoku, num_value, couple_list[0])
-            couple_list.remove(couple_list[0])
-            break
-
-    return ret_value, couple_list
+    if len(unique_list) > 0:
+        return True
+    else:
+        return False
 
 def process_duplicates_per_block(sudoku_list,possibility_dict):
     ret_value = False
@@ -352,11 +237,10 @@ def process_duplicates_per_block(sudoku_list,possibility_dict):
                 if unique_value in possibility_dict[tmp_couple]:
                     ret_value = True
                     if get_value(sudoku_list,tmp_couple) == 0:
-                        print("  - "+str(tmp_couple)+" = "+str(unique_value))
+                        print("set_value "+str(tmp_couple)+" = "+str(unique_value))
                         set_value(sudoku_list, unique_value, tmp_couple)
 
     return ret_value
-
 
 ################################################################
 #
@@ -395,21 +279,25 @@ if __name__ == '__main__':
         print('--------------------------------')
         print('Iteration {}:'.format(i))
 
-        num_dict = dict()
-        rescan   = False
+        num_dict    = dict()
         # For each num get couples possibility
         for num_value in range(1,10):
             remain_couples = scan_num(sudoku_list,num_value)
-            tmp_ret, remain_couples = process_unique(sudoku_list,num_value,remain_couples) 
             num_dict[num_value] = remain_couples
-            if tmp_ret: rescan = True
-
-        if rescan:
-            print('process_unique')
-            continue
 
         # For each couple get nums possibility
         possibility_dict = get_num_per_couples(num_dict)
+
+        # Process unique
+        rescan = process_unique(sudoku_list,possibility_dict)
+        # if process_unique occurs -> rescan possibilities
+        if rescan: 
+            print('process unique')
+            continue
+
+        # Break if no more things to do
+        if len(possibility_dict.keys()) == 0:
+            break
 
         # Process duplicates
         rescan = process_duplicates_per_block(sudoku_list,possibility_dict)
