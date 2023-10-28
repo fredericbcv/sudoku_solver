@@ -4,6 +4,9 @@ import os, sys, json, argparse
 from itertools import product
 from copy import deepcopy
 
+# TODO create a class sudoku
+# Add tests
+
 ################################################################
 #
 # ########     ###     ######  ####  ######
@@ -274,22 +277,101 @@ def process_unique(sudoku,possibility_dict):
         possibility_dict.pop(tmp_couple)
 
     if len(unique_list) > 0:
-        print('process_unique_num')
         return True
     else:
         return False
 
 def process_duplicates(sudoku_list,possibility_dict):
+    # Filter duplicates
+    filter_duplicates_per_block(sudoku_list,possibility_dict)
+    filter_duplicates_per_line (sudoku_list,possibility_dict)
+    filter_duplicates_per_row  (sudoku_list,possibility_dict)
+
     if process_duplicates_per_block(sudoku_list,possibility_dict): return True
     if process_duplicates_per_line (sudoku_list,possibility_dict): return True
     if process_duplicates_per_row  (sudoku_list,possibility_dict): return True
 
-    # keep true duplicates in block
-    # then check line & row to update possiblity in other cases
+    return False
 
+def process_duplicates_per_block(sudoku_list,possibility_dict):
+    for block_num in range(9):
+        # Filter possibility per block
+        couple_list = list(filter(lambda x: block_num == int(x[0]/3)*3+int(x[1]/3), possibility_dict.keys()))
+        # Process duplicates
+        if process_duplicates_algo(sudoku_list,possibility_dict,couple_list): return True
+    return False
+
+def process_duplicates_per_line(sudoku_list,possibility_dict):
+    for line_num in range(9):
+        # Filter possibility per line
+        couple_list = list(filter(lambda x: x[0] == line_num, possibility_dict.keys()))
+        # Process duplicates
+        if process_duplicates_algo(sudoku_list,possibility_dict,couple_list): return True
+    return False
+
+def process_duplicates_per_row (sudoku_list,possibility_dict):
+    for row_num in range(9):
+        # Filter possibility per line
+        couple_list = list(filter(lambda x: x[1] == row_num, possibility_dict.keys()))
+        # Process duplicates
+        if process_duplicates_algo(sudoku_list,possibility_dict,couple_list): return True
     return False
 
 def process_duplicates_algo(sudoku_list,possibility_dict,couple_list):
+    ret_value = False
+
+    # Filter couples with 2 num
+    tmp_list = list(filter(lambda x: len(possibility_dict[x]) == 2, couple_list))
+
+    # No duplicates found
+    if len(tmp_list) < 2: return False
+
+    # List tmp_couple per nums
+    tmp_dict = dict()
+    for tmp_couple in tmp_list:
+        tmp_values = str(possibility_dict[tmp_couple])
+        if not tmp_values in tmp_dict.keys():
+            tmp_dict[tmp_values] = list()
+        tmp_dict[tmp_values].append(tmp_couple)
+
+    # Filter keep only duplicates
+    duplicate_dict = dict()
+    for tmp_values in tmp_dict.keys():
+        if len(tmp_dict[tmp_values]) == 2:
+            duplicate_dict[tmp_values] = tmp_dict[tmp_values]
+
+    # For each duplicates
+    for duplicate_values in duplicate_dict.keys():
+        # Update couple_list
+        couple_list = list(filter(lambda x: not x in duplicate_dict[duplicate_values], couple_list))
+
+        # Filter duplicates values in other couples
+        for tmp_couple in couple_list:
+            for num_value in eval(duplicate_values):
+                if num_value in possibility_dict[tmp_couple]:
+                    ret_value = True # Rescan need to process unique
+                    possibility_dict[tmp_couple].remove(num_value)
+
+        # Search unique num in couple list
+        num_list = flatten_list(list(map(lambda x: possibility_dict[x], couple_list)))
+        unique_num = list()
+        for num_value in list(set(num_list)):
+            if num_list.count(num_value) == 1:
+                unique_num.append(num_value)
+
+        # Apply unique num value in possibility_dict
+        for tmp_couple in couple_list:
+            # Apply unique num
+            for unique_value in unique_num:
+                if unique_value in possibility_dict[tmp_couple]:
+                    ret_value = True
+                    if get_value(sudoku_list,tmp_couple) == 0:
+                        #print("set_value "+str(tmp_couple)+" = "+str(unique_value))
+                        set_value(sudoku_list, unique_value, tmp_couple)
+
+    return ret_value
+
+def filter_duplicates(sudoku_list,possibility_dict,couple_list):
     ret_value = False
 
     # List all num
@@ -311,82 +393,47 @@ def process_duplicates_algo(sudoku_list,possibility_dict,couple_list):
         num_couples += list(product([num_value],twice_num[i+1:]))
 
     # List duplicates couples possiblity
-    duplicate_couples = dict()
+    eval_duplicate_couples = dict()
     for num_couple in num_couples:
-        duplicate_couples[num_couple] = list()
+        eval_duplicate_couples[num_couple] = list()
         for tmp_couple in couple_list:
             if num_couple[0] in possibility_dict[tmp_couple] and num_couple[1] in possibility_dict[tmp_couple]:
-                duplicate_couples[num_couple].append(tmp_couple)
+                eval_duplicate_couples[num_couple].append(tmp_couple)
 
     # Update duplicate list
-    remove_num = list()
-    remove_couples = list()
-    for tmp_couple in duplicate_couples.keys():
-        if len(duplicate_couples[tmp_couple]) > 1:
-            remove_num = tmp_couple
-            remove_couples = duplicate_couples[tmp_couple]
+    duplicate_values = list()
+    duplicate_couples = list()
+    for tmp_couple in eval_duplicate_couples.keys():
+        if len(eval_duplicate_couples[tmp_couple]) > 1:
+            ret_value = True
+            duplicate_values = tmp_couple
+            duplicate_couples = eval_duplicate_couples[tmp_couple]
             break # Limit speed ?
 
-    # Update possiblity_list
-    for tmp_couple in remove_couples:
-        possibility_dict[tmp_couple] = list(remove_num)
+    # Update possiblity_dict
+    for tmp_couple in duplicate_couples:
+        possibility_dict[tmp_couple] = list(duplicate_values)
 
-    # Update couple_list
-    couple_list = list(filter(lambda x: not x in remove_couples, couple_list))
-
-    num_list = flatten_list(list(map(lambda x: possibility_dict[x], couple_list)))
-    unique_num = list()
-    for num_value in list(set(num_list)):
-        if num_list.count(num_value) == 1:
-            unique_num.append(num_value)
-
-    # Apply unique possibility
-    for tmp_couple in couple_list:
-        for unique_value in unique_num:
-            if unique_value in possibility_dict[tmp_couple]:
-                ret_value = True
-                if get_value(sudoku_list,tmp_couple) == 0:
-                    #print("set_value "+str(tmp_couple)+" = "+str(unique_value))
-                    set_value(sudoku_list, unique_value, tmp_couple)
-
-    return ret_value
-
-def process_duplicates_per_row(sudoku_list,possibility_dict):
+def filter_duplicates_per_row(sudoku_list,possibility_dict):
     for row_num in range(9):
         # Filter possibility per line
         couple_list = list(filter(lambda x: x[1] == row_num, possibility_dict.keys()))
+        # Filter duplicate
+        filter_duplicates(sudoku_list,possibility_dict,couple_list)
 
-        # Duplicate algo
-        ret_value = process_duplicates_algo(sudoku_list,possibility_dict,couple_list)
-
-    if ret_value:
-        print('process_duplicates_per_row')
-    return ret_value
-
-def process_duplicates_per_line(sudoku_list,possibility_dict):
+def filter_duplicates_per_line(sudoku_list,possibility_dict):
     for line_num in range(9):
         # Filter possibility per line
         couple_list = list(filter(lambda x: x[0] == line_num, possibility_dict.keys()))
+        # Filter duplicate
+        ret_value = filter_duplicates(sudoku_list,possibility_dict,couple_list)
 
-        # Duplicate algo
-        ret_value = process_duplicates_algo(sudoku_list,possibility_dict,couple_list)
-
-    if ret_value:
-        print('process_duplicates_per_line')
-    return ret_value
-
-def process_duplicates_per_block(sudoku_list,possibility_dict):
-    # Scan per block
+def filter_duplicates_per_block(sudoku_list,possibility_dict):
     for block_num in range(9):
         # Filter possibility per block
         couple_list = list(filter(lambda x: block_num == int(x[0]/3)*3+int(x[1]/3), possibility_dict.keys()))
-
-        # Duplicate algo
-        ret_value = process_duplicates_algo(sudoku_list,possibility_dict,couple_list)
-
-    if ret_value:
-        print('process_duplicates_per_block')
-    return ret_value
+        # Filter duplicate
+        ret_value = filter_duplicates(sudoku_list,possibility_dict,couple_list)
 
 ################################################################
 #
@@ -448,7 +495,8 @@ if __name__ == '__main__':
         # Process duplicates
         rescan = process_duplicates(sudoku_list,possibility_dict)
         if rescan: 
-            continue
+            scan_update(sudoku_list,possibility_dict)
+            rescan_cnt += 1
 
         # Create a fifo to store a save point and choose a path
         # if this step is hit again and no more move possible
