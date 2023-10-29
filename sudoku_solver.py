@@ -3,93 +3,7 @@
 import os, sys, json, argparse
 from itertools import product
 from copy import deepcopy
-
-# TODO create a class sudoku
-# Add tests
-
-################################################################
-#
-# ########     ###     ######  ####  ######
-# ##     ##   ## ##   ##    ##  ##  ##    ##
-# ##     ##  ##   ##  ##        ##  ##
-# ########  ##     ##  ######   ##  ##
-# ##     ## #########       ##  ##  ##
-# ##     ## ##     ## ##    ##  ##  ##    ##
-# ########  ##     ##  ######  ####  ######
-#
-################################################################
-def get_block(sudoku,num_line,num_row):
-    return sudoku[num_line][num_row]
-
-def get_row(sudoku,num_row):
-    tmp_list = list()
-
-    x = int(num_row/3)
-    y = num_row%3
-
-    for idx in range(3):
-        for subitem in sudoku[idx][x]:
-            tmp_list.append(subitem[y])
-
-    return tmp_list
-
-def get_line(sudoku,num_line):
-    tmp_list = list()
-
-    x = int(num_line/3)
-    y = num_line%3
-
-    for item in sudoku[x]:
-        tmp_list += item[y]
-    
-    return tmp_list
-
-def get_value(sudoku,num_tuple):
-    num_line,num_row = num_tuple
-    tmp_line = get_line(sudoku,num_line)
-    return tmp_line[num_row]
-
-def set_value(sudoku,num_value,num_tuple):
-    num_line,num_row = num_tuple
-    sudoku[int(num_line/3)][int(num_row/3)][int(num_line%3)][int(num_row%3)] = num_value
-
-def flatten_list(sudoku):
-    ret_list = list()
-    for item in sudoku:
-        if type(item) == list:
-            ret_list += flatten_list(item)
-        else:
-            ret_list.append(item)
-    return ret_list
-
-def get_remain_values(sudoku):
-    flat_list = flatten_list(sudoku)
-    ret_dict = dict()
-    for x in range(1,10):
-        ret_dict[x] = 9 - flat_list.count(x)
-    return ret_dict
-
-def get_num_per_couples(num_dict):
-    # Create new dict
-    ret_dict = dict()
-    for num_value in num_dict.keys():
-        for tmp_couple in num_dict[num_value]:
-            if not tmp_couple in ret_dict.keys():
-                ret_dict[tmp_couple] = list()
-            ret_dict[tmp_couple].append(num_value)
-    return ret_dict
-
-def print_remain_values(sudoku):
-    print("Remain values:")
-    flat_list = flatten_list(sudoku)
-    for x in range(1,10):
-        print("  * "+str(x)+" = "+str(9-flat_list.count(x)))
-
-def print_sudoku(sudoku):
-    for line in sudoku:
-        for x in range(3):
-            print(str(line[0][x]) + "  " + str(line[1][x]) + "  " + str(line[2][x]) )
-        print("")
+from sudoku import *
 
 ################################################################
 #
@@ -102,49 +16,49 @@ def print_sudoku(sudoku):
 #  ######  ##     ## ########  ######  ##    ##
 #
 ################################################################
-def check_is_num_exist_for_tuple(sudoku,num_value,num_tuple):
+def check_is_num_exist_for_tuple(sudoku_obj,num_value,num_tuple):
     # Get positions
     block_line = int(num_tuple[0]/3)
     block_row  = int(num_tuple[1]/3)
 
     # CHECK VALUE
-    if 0 != get_value(sudoku,num_tuple):
+    if 0 != sudoku_obj.get_value(num_tuple):
         return False
 
     # CHECK BLOCK
-    tmp_block = flatten_list(get_block(sudoku,block_line,block_row))
+    tmp_block = sudoku_obj.flatten_list(sudoku_obj.get_block(block_line,block_row))
     if num_value in tmp_block:
         return False
 
     # CHECK LINE
-    tmp_line = get_line(sudoku,num_tuple[0])
+    tmp_line = sudoku_obj.get_line(num_tuple[0])
     if num_value in tmp_line:
         return False
 
     # CHECK ROW
-    tmp_row = get_row(sudoku,num_tuple[1])
+    tmp_row = sudoku_obj.get_row(num_tuple[1])
     if num_value in tmp_row:
         return False
 
     # ELSE
     return True
 
-def check_is_num_unique(sudoku,tmp_couple,possibility_dict):
+def check_is_num_unique(sudoku_obj,tmp_couple,possibility_dict):
     for check_func in [check_unique_in_line,check_unique_in_row,check_unique_in_intersection]:
-        tmp_list = list(filter(lambda x: check_func(sudoku,x,tmp_couple), possibility_dict[tmp_couple]))
+        tmp_list = list(filter(lambda x: check_func(sudoku_obj,x,tmp_couple), possibility_dict[tmp_couple]))
         if len(tmp_list) == 1: 
             possibility_dict[tmp_couple] = tmp_list
             return
 
-def check_unique_in_line(sudoku,num_value,num_tuple):
+def check_unique_in_line(sudoku_obj,num_value,num_tuple):
     x,y  = num_tuple
-    line = get_line(sudoku,x)
+    line = sudoku_obj.get_line(x)
 
     count_validity = 0
     for row_idx, row_value in enumerate(line):
         if row_idx == y:
             continue
-        if check_is_num_exist_for_tuple(sudoku, num_value, (x,row_idx)):
+        if check_is_num_exist_for_tuple(sudoku_obj, num_value, (x,row_idx)):
             count_validity += 1
 
     if count_validity == 0:
@@ -152,15 +66,15 @@ def check_unique_in_line(sudoku,num_value,num_tuple):
     else:
         return False
 
-def check_unique_in_row(sudoku,num_value,num_tuple):
+def check_unique_in_row(sudoku_obj,num_value,num_tuple):
     x,y = num_tuple
-    row = get_row(sudoku,y)
+    row = sudoku_obj.get_row(y)
 
     count_validity = 0
     for line_idx, line_value in enumerate(row):
         if line_idx == x:
             continue
-        if check_is_num_exist_for_tuple(sudoku, num_value, (line_idx,y)):
+        if check_is_num_exist_for_tuple(sudoku_obj, num_value, (line_idx,y)):
             count_validity += 1
 
     if count_validity == 0:
@@ -168,12 +82,12 @@ def check_unique_in_row(sudoku,num_value,num_tuple):
     else:
         return False
 
-def check_unique_in_intersection(sudoku,num_value,num_tuple):
+def check_unique_in_intersection(sudoku_obj,num_value,num_tuple):
     # Get line & row
     x,y = num_tuple
-    line = get_line(sudoku,x)
-    row = get_row(sudoku,y)
-    block = flatten_list(get_block(sudoku,int(x/3),int(y/3)))
+    line = sudoku_obj.get_line(x)
+    row = sudoku_obj.get_row(y)
+    block = sudoku_obj.flatten_list(sudoku_obj.get_block(int(x/3),int(y/3)))
     tmp_list = set(line+row+block)
     tmp_list.remove(0)
 
@@ -182,12 +96,12 @@ def check_unique_in_intersection(sudoku,num_value,num_tuple):
     else:
         return False
 
-def check_unique_per_block(sudoku,possibility_dict):
+def check_unique_per_block(sudoku_obj,possibility_dict):
     for block_num in range(9):
         block_list = list(filter(lambda x: block_num == int(x[0]/3)*3+int(x[1]/3), possibility_dict.keys()))
 
         # Get unique in this block
-        block_values = flatten_list(list(map(lambda x: possibility_dict[x], block_list)))
+        block_values = sudoku_obj.flatten_list(list(map(lambda x: possibility_dict[x], block_list)))
 
         # Unique num
         unique_num = list()
@@ -212,43 +126,43 @@ def check_unique_per_block(sudoku,possibility_dict):
 #  ######   ######  ##     ## ##    ## ####### ##    ##  #######  ##     ##
 #
 ################################################################
-def scan_num(sudoku,num_value):
+def scan_num(sudoku_obj,num_value):
     # Search potential line
     x_list = list()
     for x in range(9):
-        if not num_value in get_line(sudoku,x):
+        if not num_value in sudoku_obj.get_line(x):
             x_list.append(x)
 
     # Search potential row
     y_list = list()
     for y in range(9):
-        if not num_value in get_row(sudoku,y):
+        if not num_value in sudoku_obj.get_row(y):
             y_list.append(y)
 
     # Get all couple
     couple_list = list(product(x_list,y_list))
 
     # Filter couple available
-    couple_list = list(filter(lambda x: check_is_num_exist_for_tuple(sudoku,num_value,x), couple_list))
+    couple_list = list(filter(lambda x: check_is_num_exist_for_tuple(sudoku_obj,num_value,x), couple_list))
 
     # Return untreat valid list
     return couple_list
 
-def scan_update(sudoku,possibility_dict):
+def scan_update(sudoku_obj,possibility_dict):
     delete_list = list()
 
     # Check values
     for tmp_couple in possibility_dict.keys():
         # Check num validity
-        possibility_dict[tmp_couple] = list(filter(lambda x: check_is_num_exist_for_tuple(sudoku,x,tmp_couple), possibility_dict[tmp_couple]))
+        possibility_dict[tmp_couple] = list(filter(lambda x: check_is_num_exist_for_tuple(sudoku_obj,x,tmp_couple), possibility_dict[tmp_couple]))
         # Check num is unique
-        check_is_num_unique(sudoku,tmp_couple,possibility_dict)
+        check_is_num_unique(sudoku_obj,tmp_couple,possibility_dict)
         # Update delete list
         if len(possibility_dict[tmp_couple]) == 0:
             delete_list.append(tmp_couple)
 
     # Check per block
-    check_unique_per_block(sudoku,possibility_dict)
+    check_unique_per_block(sudoku_obj,possibility_dict)
 
     for tmp_couple in delete_list:
         possibility_dict.pop(tmp_couple)
@@ -264,13 +178,13 @@ def scan_update(sudoku,possibility_dict):
 # ##        ##     ##  #######   ######  ########  ######   ######  
 #
 ################################################################
-def process_unique(sudoku,possibility_dict):
+def process_unique(sudoku_obj,possibility_dict):
     # Create unique list
     unique_list = list()
     for tmp_couple in possibility_dict.keys():
         if len(possibility_dict[tmp_couple]) == 1:
             unique_list.append(tmp_couple)
-            set_value(sudoku, possibility_dict[tmp_couple][0], tmp_couple)
+            sudoku_obj.set_value(possibility_dict[tmp_couple][0], tmp_couple)
 
     # Update ret_dict
     for tmp_couple in unique_list:
@@ -281,43 +195,43 @@ def process_unique(sudoku,possibility_dict):
     else:
         return False
 
-def process_duplicates(sudoku_list,possibility_dict):
+def process_duplicates(sudoku_obj,possibility_dict):
     # Filter duplicates
-    filter_duplicates_per_block(sudoku_list,possibility_dict)
-    filter_duplicates_per_line (sudoku_list,possibility_dict)
-    filter_duplicates_per_row  (sudoku_list,possibility_dict)
+    filter_duplicates_per_block(sudoku_obj,possibility_dict)
+    filter_duplicates_per_line (sudoku_obj,possibility_dict)
+    filter_duplicates_per_row  (sudoku_obj,possibility_dict)
 
-    if process_duplicates_per_block(sudoku_list,possibility_dict): return True
-    if process_duplicates_per_line (sudoku_list,possibility_dict): return True
-    if process_duplicates_per_row  (sudoku_list,possibility_dict): return True
+    if process_duplicates_per_block(sudoku_obj,possibility_dict): return True
+    if process_duplicates_per_line (sudoku_obj,possibility_dict): return True
+    if process_duplicates_per_row  (sudoku_obj,possibility_dict): return True
 
     return False
 
-def process_duplicates_per_block(sudoku_list,possibility_dict):
+def process_duplicates_per_block(sudoku_obj,possibility_dict):
     for block_num in range(9):
         # Filter possibility per block
         couple_list = list(filter(lambda x: block_num == int(x[0]/3)*3+int(x[1]/3), possibility_dict.keys()))
         # Process duplicates
-        if process_duplicates_algo(sudoku_list,possibility_dict,couple_list): return True
+        if process_duplicates_algo(sudoku_obj,possibility_dict,couple_list): return True
     return False
 
-def process_duplicates_per_line(sudoku_list,possibility_dict):
+def process_duplicates_per_line(sudoku_obj,possibility_dict):
     for line_num in range(9):
         # Filter possibility per line
         couple_list = list(filter(lambda x: x[0] == line_num, possibility_dict.keys()))
         # Process duplicates
-        if process_duplicates_algo(sudoku_list,possibility_dict,couple_list): return True
+        if process_duplicates_algo(sudoku_obj,possibility_dict,couple_list): return True
     return False
 
-def process_duplicates_per_row (sudoku_list,possibility_dict):
+def process_duplicates_per_row (sudoku_obj,possibility_dict):
     for row_num in range(9):
         # Filter possibility per line
         couple_list = list(filter(lambda x: x[1] == row_num, possibility_dict.keys()))
         # Process duplicates
-        if process_duplicates_algo(sudoku_list,possibility_dict,couple_list): return True
+        if process_duplicates_algo(sudoku_obj,possibility_dict,couple_list): return True
     return False
 
-def process_duplicates_algo(sudoku_list,possibility_dict,couple_list):
+def process_duplicates_algo(sudoku_obj,possibility_dict,couple_list):
     ret_value = False
 
     # Filter couples with 2 num
@@ -353,7 +267,7 @@ def process_duplicates_algo(sudoku_list,possibility_dict,couple_list):
                     possibility_dict[tmp_couple].remove(num_value)
 
         # Search unique num in couple list
-        num_list = flatten_list(list(map(lambda x: possibility_dict[x], couple_list)))
+        num_list = sudoku_obj.flatten_list(list(map(lambda x: possibility_dict[x], couple_list)))
         unique_num = list()
         for num_value in list(set(num_list)):
             if num_list.count(num_value) == 1:
@@ -365,17 +279,17 @@ def process_duplicates_algo(sudoku_list,possibility_dict,couple_list):
             for unique_value in unique_num:
                 if unique_value in possibility_dict[tmp_couple]:
                     ret_value = True
-                    if get_value(sudoku_list,tmp_couple) == 0:
+                    if sudoku_obj.get_value(tmp_couple) == 0:
                         #print("set_value "+str(tmp_couple)+" = "+str(unique_value))
-                        set_value(sudoku_list, unique_value, tmp_couple)
+                        sudoku_obj.set_value(unique_value, tmp_couple)
 
     return ret_value
 
-def filter_duplicates(sudoku_list,possibility_dict,couple_list):
+def filter_duplicates(sudoku_obj,possibility_dict,couple_list):
     ret_value = False
 
     # List all num
-    num_list = flatten_list(list(map(lambda x: possibility_dict[x], couple_list)))
+    num_list = sudoku_obj.flatten_list(list(map(lambda x: possibility_dict[x], couple_list)))
 
     # Search each num declared twice
     twice_num = list()
@@ -414,26 +328,89 @@ def filter_duplicates(sudoku_list,possibility_dict,couple_list):
     for tmp_couple in duplicate_couples:
         possibility_dict[tmp_couple] = list(duplicate_values)
 
-def filter_duplicates_per_row(sudoku_list,possibility_dict):
+def filter_duplicates_per_row(sudoku_obj,possibility_dict):
     for row_num in range(9):
         # Filter possibility per line
         couple_list = list(filter(lambda x: x[1] == row_num, possibility_dict.keys()))
         # Filter duplicate
-        filter_duplicates(sudoku_list,possibility_dict,couple_list)
+        filter_duplicates(sudoku_obj,possibility_dict,couple_list)
 
-def filter_duplicates_per_line(sudoku_list,possibility_dict):
+def filter_duplicates_per_line(sudoku_obj,possibility_dict):
     for line_num in range(9):
         # Filter possibility per line
         couple_list = list(filter(lambda x: x[0] == line_num, possibility_dict.keys()))
         # Filter duplicate
-        ret_value = filter_duplicates(sudoku_list,possibility_dict,couple_list)
+        ret_value = filter_duplicates(sudoku_obj,possibility_dict,couple_list)
 
-def filter_duplicates_per_block(sudoku_list,possibility_dict):
+def filter_duplicates_per_block(sudoku_obj,possibility_dict):
     for block_num in range(9):
         # Filter possibility per block
         couple_list = list(filter(lambda x: block_num == int(x[0]/3)*3+int(x[1]/3), possibility_dict.keys()))
         # Filter duplicate
-        ret_value = filter_duplicates(sudoku_list,possibility_dict,couple_list)
+        ret_value = filter_duplicates(sudoku_obj,possibility_dict,couple_list)
+
+################################################################
+#
+#  ######   #######  ##       ##     ## ######## ########  
+# ##    ## ##     ## ##       ##     ## ##       ##     ## 
+# ##       ##     ## ##       ##     ## ##       ##     ## 
+#  ######  ##     ## ##       ##     ## ######   ########  
+#       ## ##     ## ##        ##   ##  ##       ##   ##   
+# ##    ## ##     ## ##         ## ##   ##       ##    ##  
+#  ######   #######  ########    ###    ######## ##     ## 
+#
+################################################################
+def get_num_per_couples(num_dict):
+    # Create new dict
+    ret_dict = dict()
+    for num_value in num_dict.keys():
+        for tmp_couple in num_dict[num_value]:
+            if not tmp_couple in ret_dict.keys():
+                ret_dict[tmp_couple] = list()
+            ret_dict[tmp_couple].append(num_value)
+    return ret_dict
+
+def sudoku_solver(sudoku_obj,iteration,verbose=True):
+    # Scan each couples
+    num_dict    = dict()
+    for num_value in range(1,10):
+        remain_couples = scan_num(sudoku_obj,num_value)
+        num_dict[num_value] = remain_couples
+
+    # For each couple get nums possibility
+    possibility_dict = get_num_per_couples(num_dict)
+
+    for i in range(iteration):
+        if (verbose): print('--------------------------------')
+        if (verbose): print('Iteration {}:'.format(i))
+
+        rescan_cnt = 0
+
+        # Update possiblity
+        scan_update(sudoku_obj,possibility_dict)
+
+        # Process unique
+        rescan = process_unique(sudoku_obj,possibility_dict)
+        if rescan: 
+            scan_update(sudoku_obj,possibility_dict)
+            rescan_cnt += 1
+
+        # Process duplicates
+        rescan = process_duplicates(sudoku_obj,possibility_dict)
+        if rescan: 
+            scan_update(sudoku_obj,possibility_dict)
+            rescan_cnt += 1
+
+        # Create a fifo to store a save point and choose a path
+        # if this step is hit again and no more move possible
+        # Load previous point and choose an other path
+        # if the fifo is empty terminate loop
+
+        # No more idea
+        if rescan_cnt == 0:
+            break
+
+    return possibility_dict
 
 ################################################################
 #
@@ -457,58 +434,19 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
 
-    # Read json file
-    with open(args.file,'r') as file:
-        file_content = file.read()
-
-    # Load json file
-    sudoku_list = json.loads(file_content)
+    # Load sudoku
+    sudoku_obj = sudoku(args.file)
 
     print("Initial Matrix")
-    print_sudoku(sudoku_list)
-    print_remain_values(sudoku_list)
+    sudoku_obj.print_matrix()
+    sudoku_obj.print_remain_values()
 
-    # Scan each couples
-    num_dict    = dict()
-    for num_value in range(1,10):
-        remain_couples = scan_num(sudoku_list,num_value)
-        num_dict[num_value] = remain_couples
+    # Solve
+    possibility_dict = sudoku_solver(sudoku_obj,args.iteration)
 
-    # For each couple get nums possibility
-    possibility_dict = get_num_per_couples(num_dict)
-
-    for i in range(args.iteration):
-        print('--------------------------------')
-        print('Iteration {}:'.format(i))
-
-        rescan_cnt = 0
-
-        # Update possiblity
-        scan_update(sudoku_list,possibility_dict)
-
-        # Process unique
-        rescan = process_unique(sudoku_list,possibility_dict)
-        if rescan: 
-            scan_update(sudoku_list,possibility_dict)
-            rescan_cnt += 1
-
-        # Process duplicates
-        rescan = process_duplicates(sudoku_list,possibility_dict)
-        if rescan: 
-            scan_update(sudoku_list,possibility_dict)
-            rescan_cnt += 1
-
-        # Create a fifo to store a save point and choose a path
-        # if this step is hit again and no more move possible
-        # Load previous point and choose an other path
-        # if the fifo is empty terminate loop
-
-        # No more idea
-        if rescan_cnt == 0:
-            break
-
-    print_sudoku(sudoku_list)
-    print_remain_values(sudoku_list)
+    # Print output
+    sudoku_obj.print_matrix()
+    sudoku_obj.print_remain_values()
     for tmp_couple in possibility_dict.keys():
         tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
         print(str(tmp_couple)+": "+str(possibility_dict[tmp_couple]))
