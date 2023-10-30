@@ -6,16 +6,22 @@ from sudoku_solver import *
 
 def generic_test(filename,num_tuple,num_value,print_matrix=False):
     sudoku_obj = sudoku(filename)
-    possibility_dict = sudoku_solver(sudoku_obj,num_value,False)
+    possibility_dict = sudoku_solver(sudoku_obj,50,False)
     if sudoku_obj.get_value(num_tuple) == num_value: 
         print('  => OK')
     else: 
         print('  => KO')
     if print_matrix:
         sudoku_obj.print_matrix()
+        sudoku_obj.print_remain_values()
+        for tmp_couple in possibility_dict.keys():
+            tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+            if (tmp_couple[1] == 8):
+                print(str(tmp_couple)+": "+str(possibility_dict[tmp_couple]))
+        print('--------------------------------')
+        print("")
 
 if __name__ == '__main__':
-
     print('TEST1: Scan')
     generic_test("./tests/example_scan.json",(1,6),1)
 
@@ -44,10 +50,10 @@ if __name__ == '__main__':
     generic_test("./tests/example_triplet.json",(0,2),1)
 
     print('TEST10: Combinations1')
-    generic_test("./tests/example_combinations1.json",(6,8),2,True)
+    generic_test("./tests/example_combinations1.json",(6,8),2)
 
     print('TEST11: Combinations2')
-    generic_test("./tests/example_combinations2.json",(8,6),8,True)
+    generic_test("./tests/example_combinations2.json",(8,6),8)
 
     print('TEST12: Combinations3')
-    generic_test("./tests/example_combinations3.json",(0,8),1,True)
+    generic_test("./tests/example_combinations3.json",(0,8),1)
