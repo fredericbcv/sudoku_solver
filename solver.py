@@ -448,7 +448,7 @@ def get_num_per_couples(num_dict):
             ret_dict[tmp_couple].append(num_value)
     return ret_dict
 
-def sudoku_solver(sudoku_obj,iteration,verbose=True):
+def solver(sudoku_obj,iteration,verbose=True):
     # Scan each couples
     num_dict    = dict()
     for num_value in range(1,10):
@@ -461,7 +461,6 @@ def sudoku_solver(sudoku_obj,iteration,verbose=True):
     for i in range(iteration):
         if (verbose): print('--------------------------------')
         if (verbose): print('Iteration {}:'.format(i))
-
         rescan_cnt = 0
 
         # Update possiblity
@@ -480,21 +479,89 @@ def sudoku_solver(sudoku_obj,iteration,verbose=True):
             rescan_cnt += 1
 
         # Filter combinations
-        rescan = filter_combinations(sudoku_obj,possibility_dict)
-        if rescan:
-            scan_update(sudoku_obj,possibility_dict)
-            rescan_cnt += 1
-
-        # Create a fifo to store a save point and choose a path
-        # if this step is hit again and no more move possible
-        # Load previous point and choose an other path
-        # if the fifo is empty terminate loop
+        # rescan = filter_combinations(sudoku_obj,possibility_dict)
+        # if rescan:
+        #     scan_update(sudoku_obj,possibility_dict)
+        #     rescan_cnt += 1
 
         # No more idea
         if rescan_cnt == 0:
             break
 
-    return possibility_dict
+    # Get remain values
+    remain_values = sudoku_obj.get_remain_values()
+
+    # Return status
+    if list(remain_values.values()) == [0]*9:
+        # Solved
+        return 0
+    else:
+        possibility_num = len(possibility_dict.keys())
+        remain_num = sudoku_obj.flatten_list(sudoku_obj.matrix).count(0)
+
+        # No solution found
+        if possibility_num == remain_num:
+            return 1
+        # Error
+        else:
+            return -1
+
+def sudoku_solver(sudoku_obj,iteration,verbose=False):
+    # Copy Sudoku
+    sudoku_copy = deepcopy(sudoku_obj)
+
+    # Run solver
+    ret_value = solver(sudoku_copy,iteration,verbose)
+
+    # SOLVED
+    if ret_value == 0:
+        sudoku_obj.copy(sudoku_copy)
+        #sudoku_obj.print_matrix()
+        #print('----')
+        return ret_value
+    # ERROR
+    elif ret_value == -1:
+        return ret_value
+    # NO SOLUTION FOUND
+    elif ret_value == 1:
+        # Scan each couples
+        num_dict    = dict()
+        for num_value in range(1,10):
+            remain_couples = scan_num(sudoku_copy,num_value)
+            num_dict[num_value] = remain_couples
+
+        # List possiblity
+        possibility_dict = get_num_per_couples(num_dict)
+        possibility_len = list(map(lambda x: len(possibility_dict[x]), possibility_dict.keys()))
+
+        if len(possibility_len) == 0:
+            return -1
+
+        # Test by possibility len (min to max) 
+        for tmp_len in range(min(possibility_len),max(possibility_len)+1):
+            tmp_possibility = list(filter(lambda x: len(possibility_dict[x]) == tmp_len, possibility_dict.keys()))
+            # Test each couples
+            for tmp_couple in tmp_possibility:
+                # Test each values
+                for tmp_num in possibility_dict[tmp_couple]:
+                    # Set value
+                    sudoku_copy.set_value(tmp_num,tmp_couple)
+                    # Run solver
+                    ret_value = sudoku_solver(sudoku_copy,iteration,verbose)
+
+                    if ret_value == 0:
+                        sudoku_obj.copy(sudoku_copy)
+                        return ret_value
+
+                    # Erase value
+                    sudoku_copy.set_value(0,tmp_couple)
+
+                    if ret_value == -1:
+                        continue
+                    else:
+                        return ret_value
+
+        return ret_value
 
 ################################################################
 #
@@ -526,13 +593,18 @@ if __name__ == '__main__':
     sudoku_obj.print_remain_values()
 
     # Solve
-    possibility_dict = sudoku_solver(sudoku_obj,args.iteration)
+    ret_value = sudoku_solver(sudoku_obj,args.iteration)
+
+    if ret_value == 0:
+        print('=> SOLVED')
+    elif ret_value == 1:
+        print('=> NO SOLUTION FOUND')
+    elif ret_value == -1:
+        print('=> ERROR')
 
     # Print output
     sudoku_obj.print_matrix()
     sudoku_obj.print_remain_values()
-    for tmp_couple in possibility_dict.keys():
-        tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
-        print(str(tmp_couple)+": "+str(possibility_dict[tmp_couple]))
+
     print('--------------------------------')
     print("")

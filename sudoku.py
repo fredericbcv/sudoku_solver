@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os, sys, json
+from copy import deepcopy
 
 class sudoku(object):
     def __init__(self, *args, **kwargs):
@@ -56,7 +57,7 @@ class sudoku(object):
         return ret_list
 
     def get_remain_values(self,):
-        flat_list = flatten_list(self.matrix)
+        flat_list = self.flatten_list(self.matrix)
         ret_dict = dict()
         for x in range(1,10):
             ret_dict[x] = 9 - flat_list.count(x)
@@ -73,6 +74,12 @@ class sudoku(object):
             for x in range(3):
                 print(str(line[0][x]) + "  " + str(line[1][x]) + "  " + str(line[2][x]) )
             print("")
+
+    def copy(self,matrix_to_copy):
+        for block_line in range(3):
+            for block_row in range(3):
+                for line in range(3):
+                    self.matrix[block_line][block_row][line] = deepcopy(matrix_to_copy.matrix[block_line][block_row][line])
 
 if __name__ == '__main__':
     sudoku()
