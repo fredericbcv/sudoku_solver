@@ -3,13 +3,86 @@
 import os, sys, json
 from copy import deepcopy
 
+default_matrix = [
+    [
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ],
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ],
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ]
+    ],
+    [
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ],
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ],
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ]
+    ],
+    [
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ],
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ],
+        [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ]
+    ]
+]
+
+
 class sudoku(object):
     def __init__(self, *args, **kwargs):
         json_file=kwargs.get('json_file', None)
         if len(args) > 0:
             self.load(args[0])
-        elif file != None:
+        elif json_file != None:
             self.load(file)
+        else:
+            # Init matrix
+            self.matrix = default_matrix
+
+    def validate(self,):
+        pass
+
+        for num_line in range(9):
+            num_values = self.get_line(num_line)
+
+            print(num_values)
+
+
+        # If not valide return list of problematic case to color them
+
+            # Check if num declare twice by line, row, block
+
+        # else return None
 
     def load(self,json_file):
         with open(json_file,'r') as file:
