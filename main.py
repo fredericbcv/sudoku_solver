@@ -9,12 +9,17 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
+from kivy.uix.progressbar import ProgressBar
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.clock import Clock
 from solver import *
 from sudoku import *
 
-button_txt_color    = (  0,   0,   0, 1)
-button_click_color  = (127, 0, 0, 1)
-button_bg_color     = (255, 255, 255, 1)
+button_txt_color    = (   0,   0,   0, 1 )
+button_click_color  = (   0, 127,   0, 1 )
+buttor_error_color  = ( 127,   0,   0, 1 )
+button_bg_color     = ( 255, 255, 255, 1 )
 
 class root_layout(GridLayout):
     def __init__(self,**kwargs):
@@ -31,6 +36,16 @@ class root_layout(GridLayout):
         # Add inputs
         self.inputs = inputs_layout()
         self.add_widget(self.inputs)
+
+        # Popup
+        x,y = Window.size
+        self.popup = Popup(
+            title='',
+            separator_height=0,
+            content=Label(text='Processing, please wait...',font_size=50),
+            size_hint=(None, None), 
+            size=(x,y)
+            )
 
     def do_layout(self,*args):
         self.apply_ratio()
@@ -130,18 +145,32 @@ class input_actions(GridLayout):
             for x in range(9):
                 for y in range(9):
                     self.parent.parent.grid.case_layout[x][y].text = ""
+                    self.parent.parent.grid.case_layout[x][y].background_color = button_bg_color
 
         if instance.value == "Solve":
-            # Create sudoku
-            sudoku_obj = sudoku()
-            for x in range(9):
-                for y in range(9):
-                    case_value = self.parent.parent.grid.case_layout[x][y].text
-                    if case_value == "":
-                        sudoku_obj.set_value(0,(x,y))
-                    else:
-                        sudoku_obj.set_value(int(case_value),(x,y))
+            # Open popup
+            self.parent.parent.popup.open()
 
+            # Solve Sudoku
+            Clock.schedule_once(lambda dt: self.sudoku_solver_schedule(),0)
+
+            self.parent.parent.popup.dismiss()
+
+    def sudoku_solver_schedule(self, *args):
+        # Create sudoku
+        sudoku_obj = sudoku()
+        for x in range(9):
+            for y in range(9):
+                case_value = self.parent.parent.grid.case_layout[x][y].text
+                if case_value == "":
+                    sudoku_obj.set_value(0,(x,y))
+                else:
+                    sudoku_obj.set_value(int(case_value),(x,y))
+
+        valid_grid, tuple_list = sudoku_obj.is_valid()
+
+        # Run solver
+        if valid_grid:
             # Solve sudoku
             sudoku_solver(sudoku_obj,10,False)
 
@@ -149,6 +178,11 @@ class input_actions(GridLayout):
             for x in range(9):
                 for y in range(9):
                     self.parent.parent.grid.case_layout[x][y].text = str(sudoku_obj.get_value((x,y)))
+
+        # Error
+        else:
+            for tmp_tuple in tuple_list:
+                self.parent.parent.grid.case_layout[tmp_tuple[0]][tmp_tuple[1]].background_color = buttor_error_color
 
     def button_released(self,instance):
         instance.background_color = button_bg_color

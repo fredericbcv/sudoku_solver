@@ -69,20 +69,69 @@ class sudoku(object):
             # Init matrix
             self.matrix = default_matrix
 
-    def validate(self,):
-        pass
+    def is_valid(self,):
+        ret_list = list()
 
+        # Check lines
         for num_line in range(9):
             num_values = self.get_line(num_line)
+            unique_values = list(set(num_values))
+            unique_values.remove(0)
 
-            print(num_values)
+            # list value found twice
+            twice_list = list()
+            for tmp_value in unique_values:
+                if (num_values.count(tmp_value)) > 1:
+                    twice_list.append(tmp_value)
+
+            # Save tuples
+            for num_row in range(9):
+                if self.get_value((num_line,num_row)) in twice_list:
+                    ret_list.append((num_line,num_row))
 
 
-        # If not valide return list of problematic case to color them
+        # Check rows
+        for num_row in range(9):
+            num_values = self.get_row(num_row)
+            unique_values = list(set(num_values))
+            unique_values.remove(0)
 
-            # Check if num declare twice by line, row, block
+            # list value found twice
+            twice_list = list()
+            for tmp_value in unique_values:
+                if (num_values.count(tmp_value)) > 1:
+                    twice_list.append(tmp_value)
 
-        # else return None
+            # Save tuples
+            for num_line in range(9):
+                if self.get_value((num_line,num_row)) in twice_list:
+                    ret_list.append((num_line,num_row))
+
+        # Check block
+        for x_block in range(3):
+            for y_block in range(3):
+                num_values = self.flatten_list( self.get_block(x_block,y_block) )
+                unique_values = list(set(num_values))
+                unique_values.remove(0)
+
+                # list value found twice
+                twice_list = list()
+                for tmp_value in unique_values:
+                    if (num_values.count(tmp_value)) > 1:
+                        twice_list.append(tmp_value)
+
+                # Save tuples                
+                for row_block in range(3):
+                    for line_block in range(3):
+                        num_line = x_block*3 + line_block
+                        num_row  = y_block*3 + row_block
+                        if self.get_value((num_line,num_row)) in twice_list:
+                            ret_list.append((num_line,num_row))
+
+        if len(ret_list) == 0:
+            return True,None
+        else:
+            return False,ret_list
 
     def load(self,json_file):
         with open(json_file,'r') as file:
