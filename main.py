@@ -21,11 +21,11 @@ from solver import *
 from sudoku import *
 
 button_txt_color     = ( 0, 0, 0, 1 )
-button_click_color   = ( 0, 1, 0, 1 )
+button_click_color   = ( 1, .7, 0, 1 )
 buttor_error_color   = ( 1, 0, 0, 1 )
 button_bg_color      = ( 1, 1, 1, 1 )
 button_grid_bg_color = ( 1, 1, 1, 1 )
-button_nums_bg_color = ( 1, .5, 0, 1 )
+button_nums_bg_color = ( 90/255, 100/255, 240/255, .8 )
 button_acts_bg_color = ( 90/255, 100/255, 240/255, 1 )
 
 class root_layout(FloatLayout):
@@ -89,7 +89,7 @@ class root_layout(FloatLayout):
             # Set input act
             self.input_acts.cols = 1
             acts_width  = nums_width
-            acts_height = acts_width
+            acts_height = acts_width*2
             acts_pos_x  = nums_pos_x
             acts_pos_y  = self.grid_padding
             self.input_acts.size = acts_width,acts_height
@@ -145,7 +145,7 @@ class root_layout(FloatLayout):
             # Set input act
             self.input_acts.cols = 1
             acts_width  = nums_width
-            acts_height = acts_width
+            acts_height = acts_width*2
             acts_pos_x  = nums_pos_x
             acts_pos_y  = 1 - self.grid.height/self.height - self.grid_padding*2
             acts_pos_y  = acts_pos_y/2 + self.grid_padding
@@ -184,15 +184,15 @@ class root_layout(FloatLayout):
         # Resize fonts
         for x in range(9):
             for y in range(9):
-                self.grid.case_layout[x][y].font_size = self.width*.04
+                self.grid.case_layout[x][y].font_size = case_size*.6
                 self.grid.case_layout[x][y].width  = case_size-3
                 self.grid.case_layout[x][y].height = case_size-3
 
         for x in range(10):
-            self.input_nums.nums_dict[x].font_size    = self.width*.04
+            self.input_nums.nums_dict[x].font_size    = case_size*.6
 
         for x in range(2):
-            self.input_acts.actions_dict[x].font_size = self.width*.04
+            self.input_acts.actions_dict[x].font_size = case_size*.6
 
 class input_actions(GridLayout):
     def __init__(self,**kwargs):
@@ -228,6 +228,10 @@ class input_actions(GridLayout):
                 for y in range(9):
                     self.parent.grid.case_layout[x][y].text = ""
                     self.parent.grid.case_layout[x][y].background_color = button_grid_bg_color
+
+            self.parent.input_value = None
+            for x in range(10):
+                self.parent.input_nums.nums_dict[x].background_color = button_nums_bg_color
 
         if instance.value == "Solve":
             # Open popup
@@ -312,7 +316,7 @@ class grid_layout(GridLayout):
     def __init__(self,**kwargs):
         super(grid_layout, self).__init__(**kwargs)
         self.cols = 3
-        self.padding = 0.5
+        self.padding = 0
         self.spacing = 0
 
         with self.canvas.before:
@@ -329,7 +333,7 @@ class grid_layout(GridLayout):
         for line_block in range(3):
             self.block_layout[line_block] = dict()
             for row_block in range(3):
-                self.block_layout[line_block][row_block] = GridLayout(cols=3,padding=0.5,spacing=0)
+                self.block_layout[line_block][row_block] = GridLayout(cols=3,padding=1,spacing=1)
                 self.block_layout[line_block][row_block].pos_hint = {'center_x':0.5,'center_y':0.5}
                 self.add_widget(self.block_layout[line_block][row_block])
 
