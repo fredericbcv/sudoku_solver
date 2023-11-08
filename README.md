@@ -1,2 +1,2 @@
 # sudoku_solver
-Sudoku solver in Python
+Sudoku solver (Python,Kivy,Android)
