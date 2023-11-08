@@ -163,3 +163,7 @@ cython_debug/
 kivy_venv/
 kivy-deps-build/
 
+# Buildozer
+.buildozer/
+bin/
+

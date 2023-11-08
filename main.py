@@ -20,13 +20,15 @@ from kivy.utils import get_color_from_hex
 from solver import *
 from sudoku import *
 
-button_txt_color     = ( 0, 0, 0, 1 )
-button_click_color   = ( 1, .7, 0, 1 )
-buttor_error_color   = ( 1, 0, 0, 1 )
-button_bg_color      = ( 1, 1, 1, 1 )
-button_grid_bg_color = ( 1, 1, 1, 1 )
-button_nums_bg_color = ( 90/255, 100/255, 240/255, .8 )
-button_acts_bg_color = ( 90/255, 100/255, 240/255, 1 )
+button_txt_grid_color   = ( 0, 0, 0, 1 )
+button_txt_nums_color   = ( 1, 1, 1, 1 )
+button_txt_acts_color   = ( 1, 1, 1, 1 )
+
+button_bg_click_color   = ( 1, .7, 0, 1 )
+buttor_bg_error_color   = ( 1, 0, 0, 1 )
+button_bg_grid_color    = ( 1, 1, 1, 1 )
+button_bg_nums_color    = ( 90/255, 100/255, 240/255, .8 )
+button_bg_acts_color    = ( 90/255, 100/255, 240/255, 1 )
 
 class root_layout(FloatLayout):
     def __init__(self,**kwargs):
@@ -53,7 +55,7 @@ class root_layout(FloatLayout):
         self.popup = Popup(
             title='',
             separator_height=0,
-            content=Label(text='Processing, please wait...',font_size=self.width*.3),
+            content=Label(text='Processing, please wait...',font_size=self.width*.5),
             size_hint=(None, None), 
             size=(x,y)
             )
@@ -65,121 +67,104 @@ class root_layout(FloatLayout):
     def apply_ratio(self):
         # Resize popup
         self.popup.size      = (self.width,self.height)
-        self.popup.font_size = self.width*.3
+        self.popup.font_size = self.width*.5
 
         # Resize elements
         if self.width/self.height > (11+self.grid_padding*3)/9:
             # Calc case size
             case_size = self.height*( 1 - self.grid_padding * 2 ) / 9
 
-            # Set grid
+            # Set size
             self.grid.size = case_size*9,case_size*9
-            self.grid.pos_hint = {'x':self.grid_padding, 'center_y':.5}
 
-            # Set input nums
             self.input_nums.cols = 2
             nums_width  = self.grid.width/9*2
             nums_height = nums_width*5/2
-            nums_pos_x  = self.grid_padding*2 +self.grid.width/self.width
-            nums_pos_x += ( 1 -nums_pos_x -nums_width/self.width - self.grid_padding )/2
-            nums_pos_y  = 1 - nums_height/self.height -self.grid_padding
             self.input_nums.size = nums_width,nums_height
-            self.input_nums.pos_hint = {'x': nums_pos_x, 'y': nums_pos_y}
 
-            # Set input act
             self.input_acts.cols = 1
             acts_width  = nums_width
             acts_height = acts_width*2
-            acts_pos_x  = nums_pos_x
-            acts_pos_y  = self.grid_padding
             self.input_acts.size = acts_width,acts_height
-            self.input_acts.pos_hint = {'x': acts_pos_x, 'y': acts_pos_y}
+
+            # Set position
+            pos_width_gap  = ((self.width  -self.grid.width  -nums_width )/3)/self.width
+            pos_height_gap = ((self.height -self.grid.height             )/2)/self.height
+            self.grid.pos_hint       = { 'x': pos_width_gap, 'y': pos_height_gap }
+            self.input_nums.pos_hint = { 'x': 2*pos_width_gap + self.grid.width/self.width, 'y': pos_height_gap + self.input_acts.height/self.height }
+            self.input_acts.pos_hint = { 'x': 2*pos_width_gap + self.grid.width/self.width, 'y': pos_height_gap }
 
         elif self.height/self.width > (11+self.grid_padding*3)/9:
             # Calc case size
             case_size = self.width*( 1 - self.grid_padding * 2 ) / 9
 
-            # Set grid
+            # Set size
             self.grid.size = case_size*9,case_size*9
-            self.grid.pos_hint = {'center_x':.5, 'y':1 -self.grid.height/self.height -self.grid_padding}
 
-            # Set input nums
             self.input_nums.cols = 5
             nums_width  = self.grid.width/9*5
             nums_height = self.grid.height/9*2
-            nums_pos_x  = self.grid_padding
-            nums_pos_y  = (1 -self.grid.height/self.height -self.grid_padding*3 -nums_height/self.height)/2
-            nums_pos_y  = self.grid_padding +nums_pos_y
             self.input_nums.size = nums_width,nums_height
-            self.input_nums.pos_hint = {'x': nums_pos_x, 'y': nums_pos_y}
 
-            # Set input act
             self.input_acts.cols = 2
             acts_width  = nums_height*2
             acts_height = nums_height
-            acts_pos_x  = nums_pos_x+nums_width/self.width
-            acts_pos_y  = (1 -self.grid.height/self.height -self.grid_padding*3 -acts_height/self.height)/2
-            acts_pos_y  = self.grid_padding +acts_pos_y
             self.input_acts.size = acts_width,acts_height
-            self.input_acts.pos_hint = {'x': acts_pos_x, 'y': acts_pos_y}
+
+            # Set position
+            pos_width_gap  = ((self.width  -self.grid.width               )/2)/self.width
+            pos_height_gap = ((self.height -self.grid.height -nums_height )/3)/self.height
+            self.grid.pos_hint       = { 'x': pos_width_gap, 'y': 2*pos_height_gap + self.input_nums.height/self.height }
+            self.input_nums.pos_hint = { 'x': pos_width_gap, 'y': pos_height_gap }
+            self.input_acts.pos_hint = { 'x': pos_width_gap + self.input_nums.width/self.width, 'y': pos_height_gap }
 
         elif self.width > self.height:
             # Calc case size
             case_size = self.width*(1 - self.grid_padding*3)/11
 
-            # Set grid
+            # Set size
             self.grid.size = case_size*9,case_size*9
-            self.grid.pos_hint = {'x':self.grid_padding, 'center_y':.5}
 
-            # Set input nums
             self.input_nums.cols = 2
             nums_width  = self.grid.width/9*2
             nums_height = nums_width*5/2
-            nums_pos_x  = self.grid_padding*2 +self.grid.width/self.width
-            nums_pos_x += ( 1 -nums_pos_x -nums_width/self.width - self.grid_padding )/2
-            nums_pos_y  = 1 - self.grid.height/self.height - self.grid_padding*2
-            nums_pos_y  = 1 - nums_height/self.height -self.grid_padding -nums_pos_y/2
             self.input_nums.size = nums_width,nums_height
-            self.input_nums.pos_hint = {'x': nums_pos_x, 'y': nums_pos_y}
 
-            # Set input act
             self.input_acts.cols = 1
             acts_width  = nums_width
             acts_height = acts_width*2
-            acts_pos_x  = nums_pos_x
-            acts_pos_y  = 1 - self.grid.height/self.height - self.grid_padding*2
-            acts_pos_y  = acts_pos_y/2 + self.grid_padding
             self.input_acts.size = acts_width,acts_height
-            self.input_acts.pos_hint = {'x': acts_pos_x, 'y': acts_pos_y}
+
+            # Set position
+            pos_width_gap  = ((self.width  -self.grid.width  -nums_width )/3)/self.width
+            pos_height_gap = ((self.height -self.grid.height             )/2)/self.height
+            self.grid.pos_hint       = { 'x': pos_width_gap, 'y': pos_height_gap }
+            self.input_nums.pos_hint = { 'x': 2*pos_width_gap + self.grid.width/self.width, 'y': pos_height_gap + self.input_acts.height/self.height }
+            self.input_acts.pos_hint = { 'x': 2*pos_width_gap + self.grid.width/self.width, 'y': pos_height_gap }
 
         else:
             # Calc case size
             case_size = self.height*(1 - self.grid_padding*3)/11
 
-            # Set grid
+            # Set size
             self.grid.size = case_size*9,case_size*9
-            self.grid.pos_hint = {'center_x':.5, 'y':1-self.grid.height/self.height-self.grid_padding}
 
-            # Set input nums
             self.input_nums.cols = 5
             nums_width  = self.grid.width/9*5
             nums_height = self.grid.height/9*2
-            nums_pos_x  = (1 -self.grid.width/self.width -self.grid_padding*2)/2
-            nums_pos_x += self.grid_padding
-            nums_pos_y  = (1 -self.grid.height/self.height -self.grid_padding*3 -nums_height/self.height)/2
-            nums_pos_y  = self.grid_padding +nums_pos_y
             self.input_nums.size = nums_width,nums_height
-            self.input_nums.pos_hint = {'x': nums_pos_x, 'y': nums_pos_y}
 
-            # Set input act
             self.input_acts.cols = 2
             acts_width  = nums_height*2
             acts_height = nums_height
-            acts_pos_x  = nums_pos_x+nums_width/self.width
-            acts_pos_y  = (1 -self.grid.height/self.height -self.grid_padding*3 -acts_height/self.height)/2
-            acts_pos_y  = self.grid_padding +acts_pos_y
             self.input_acts.size = acts_width,acts_height
-            self.input_acts.pos_hint = {'x': acts_pos_x, 'y': acts_pos_y}
+
+            # Set position
+            pos_width_gap  = ((self.width  -self.grid.width               )/2)/self.width
+            pos_height_gap = ((self.height -self.grid.height -nums_height )/3)/self.height
+            self.grid.pos_hint       = { 'x': pos_width_gap, 'y': 2*pos_height_gap + self.input_nums.height/self.height }
+            self.input_nums.pos_hint = { 'x': pos_width_gap, 'y': pos_height_gap }
+            self.input_acts.pos_hint = { 'x': pos_width_gap + self.input_nums.width/self.width, 'y': pos_height_gap }
 
         # Resize fonts
         for x in range(9):
@@ -208,11 +193,11 @@ class input_actions(GridLayout):
 
             self.actions_dict[x] = Button(
                 text=text_value,
-                color=button_txt_color,
+                color=button_txt_acts_color,
                 background_normal="",
                 background_down="",
-                background_color=button_acts_bg_color,
-                bold=False,
+                background_color=button_bg_acts_color,
+                bold=True,
                 font_size=self.width/3
                 )
             self.actions_dict[x].value = text_value
@@ -222,16 +207,17 @@ class input_actions(GridLayout):
             self.actions_dict[x].bind(on_release=self.button_released)
 
     def button_pressed(self,instance):
-        instance.background_color = button_click_color
+        self.parent.grid.clear_buttons()
+        instance.background_color = button_bg_click_color
         if instance.value == "Clear":
             for x in range(9):
                 for y in range(9):
                     self.parent.grid.case_layout[x][y].text = ""
-                    self.parent.grid.case_layout[x][y].background_color = button_grid_bg_color
+                    self.parent.grid.case_layout[x][y].background_color = button_bg_grid_color
 
             self.parent.input_value = None
             for x in range(10):
-                self.parent.input_nums.nums_dict[x].background_color = button_nums_bg_color
+                self.parent.input_nums.nums_dict[x].background_color = button_bg_nums_color
 
         if instance.value == "Solve":
             # Open popup
@@ -263,15 +249,16 @@ class input_actions(GridLayout):
             # Update Grid
             for x in range(9):
                 for y in range(9):
-                    self.parent.grid.case_layout[x][y].text = str(sudoku_obj.get_value((x,y)))
+                    if sudoku_obj.get_value((x,y)) != 0:
+                        self.parent.grid.case_layout[x][y].text = str(sudoku_obj.get_value((x,y)))
 
         # Error
         else:
             for tmp_tuple in tuple_list:
-                self.parent.grid.case_layout[tmp_tuple[0]][tmp_tuple[1]].background_color = buttor_error_color
+                self.parent.grid.case_layout[tmp_tuple[0]][tmp_tuple[1]].background_color = buttor_bg_error_color
 
     def button_released(self,instance):
-        instance.background_color = button_acts_bg_color
+        instance.background_color = button_bg_acts_color
 
 class input_numbers(GridLayout):
     def __init__(self,**kwargs):
@@ -289,11 +276,11 @@ class input_numbers(GridLayout):
 
             self.nums_dict[x] = Button(
                 text=text_value,
-                color=button_txt_color,
+                color=button_txt_nums_color,
                 background_normal="",
                 background_down="",
-                background_color=button_nums_bg_color,
-                bold=False,
+                background_color=button_bg_nums_color,
+                bold=True,
                 font_size=self.width/3
                 )
             self.nums_dict[x].value = text_value
@@ -301,14 +288,16 @@ class input_numbers(GridLayout):
             self.add_widget(self.nums_dict[x])
 
     def button_pressed(self,instance):
+        # self.parent.grid.clear_buttons()
+
         # Clear button color            
         for x in range(10):
-            self.nums_dict[x].background_color = button_nums_bg_color
+            self.nums_dict[x].background_color = button_bg_nums_color
         
         if self.parent.input_value != instance.value:
             self.parent.input_value = instance.value
             # Color button
-            instance.background_color = button_click_color
+            instance.background_color = button_bg_click_color
         else:
             self.parent.input_value = None
 
@@ -333,7 +322,7 @@ class grid_layout(GridLayout):
         for line_block in range(3):
             self.block_layout[line_block] = dict()
             for row_block in range(3):
-                self.block_layout[line_block][row_block] = GridLayout(cols=3,padding=1,spacing=1)
+                self.block_layout[line_block][row_block] = GridLayout(cols=3,padding=3,spacing=3)
                 self.block_layout[line_block][row_block].pos_hint = {'center_x':0.5,'center_y':0.5}
                 self.add_widget(self.block_layout[line_block][row_block])
 
@@ -344,11 +333,11 @@ class grid_layout(GridLayout):
             for row_case in range(9):
                 self.case_layout[line_case][row_case] = Button(
                     text='',
-                    color=button_txt_color,
+                    color=button_txt_grid_color,
                     background_normal="",
                     background_down="",
-                    background_color=button_grid_bg_color,
-                    bold=False,
+                    background_color=button_bg_grid_color,
+                    bold=True,
                     font_size=self.width/3
                     )
                 self.case_layout[line_case][row_case].position = (line_case,row_case)
@@ -359,18 +348,24 @@ class grid_layout(GridLayout):
                 # Add widget
                 self.block_layout[int(line_case/3)][int(row_case/3)].add_widget(self.case_layout[line_case][row_case])
 
+    def clear_buttons(self):
+        for line_case in range(9):
+            for row_case in range(9):
+                self.case_layout[line_case][row_case].background_color = button_bg_grid_color
+
     def update_rect(self, instance, value):
         self.rect.pos  = list(map(lambda x: x-1 ,self.pos))
         self.rect.size = list(map(lambda x: x+2 ,self.size))
 
     def button_pressed(self,instance):
-        instance.background_color = button_click_color
+        self.clear_buttons()
+        instance.background_color = button_bg_click_color
         x,y = instance.position
         if self.parent.input_value != None:
             self.case_layout[x][y].text = self.parent.input_value
 
     def button_released(self,instance):
-        instance.background_color = button_grid_bg_color
+        instance.background_color = button_bg_grid_color
 
 class SudokuSolverApp(App):
     def build(self):

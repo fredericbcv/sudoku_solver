@@ -76,7 +76,8 @@ class sudoku(object):
         for num_line in range(9):
             num_values = self.get_line(num_line)
             unique_values = list(set(num_values))
-            unique_values.remove(0)
+            if 0 in unique_values:
+                unique_values.remove(0)
 
             # list value found twice
             twice_list = list()
@@ -94,7 +95,8 @@ class sudoku(object):
         for num_row in range(9):
             num_values = self.get_row(num_row)
             unique_values = list(set(num_values))
-            unique_values.remove(0)
+            if 0 in unique_values:
+                unique_values.remove(0)
 
             # list value found twice
             twice_list = list()
@@ -112,7 +114,8 @@ class sudoku(object):
             for y_block in range(3):
                 num_values = self.flatten_list( self.get_block(x_block,y_block) )
                 unique_values = list(set(num_values))
-                unique_values.remove(0)
+                if 0 in unique_values:
+                    unique_values.remove(0)
 
                 # list value found twice
                 twice_list = list()
