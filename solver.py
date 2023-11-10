@@ -449,44 +449,33 @@ def get_num_per_couples(num_dict):
     return ret_dict
 
 def solver(sudoku_obj,iteration,verbose=True):
-    # Scan each couples
-    num_dict    = dict()
-    for num_value in range(1,10):
-        remain_couples = scan_num(sudoku_obj,num_value)
-        num_dict[num_value] = remain_couples
-
-    # For each couple get nums possibility
-    possibility_dict = get_num_per_couples(num_dict)
-
     for i in range(iteration):
         if (verbose): print('--------------------------------')
         if (verbose): print('Iteration {}:'.format(i))
-        rescan_cnt = 0
+
+        # Check validity
+        if not sudoku_obj.is_valid()[0]:
+            return -1
 
         # Update possiblity
-        scan_update(sudoku_obj,possibility_dict)
+        scan_update(sudoku_obj)
 
         # Process unique
-        rescan = process_unique(sudoku_obj,possibility_dict)
+        rescan = process_unique(sudoku_obj)
         if rescan: 
-            scan_update(sudoku_obj,possibility_dict)
-            rescan_cnt += 1
+            continue
 
         # Process duplicates
-        rescan = process_duplicates(sudoku_obj,possibility_dict)
+        rescan = process_duplicates(sudoku_obj)
         if rescan: 
-            scan_update(sudoku_obj,possibility_dict)
-            rescan_cnt += 1
+            continue
 
         # Filter combinations
-        # rescan = filter_combinations(sudoku_obj,possibility_dict)
+        # rescan = filter_combinations(sudoku_obj)
         # if rescan:
-        #     scan_update(sudoku_obj,possibility_dict)
-        #     rescan_cnt += 1
+        #     continue
 
-        # No more idea
-        if rescan_cnt == 0:
-            break
+        break
 
     # Get remain values
     remain_values = sudoku_obj.get_remain_values()
@@ -497,7 +486,7 @@ def solver(sudoku_obj,iteration,verbose=True):
         return 0
     else:
         possibility_num = len(possibility_dict.keys())
-        remain_num = sudoku_obj.flatten_list(sudoku_obj.matrix).count(0)
+        remain_num = sudoku_obj.flatten_list(sudoku_obj.line_matrix).count(0)
 
         # No solution found
         if possibility_num == remain_num:
