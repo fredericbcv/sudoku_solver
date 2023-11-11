@@ -219,43 +219,89 @@ class Solver:
             exploration_stack.append((candidate_cell.coords, digit, copy.deepcopy(sudoku_before_exploration)))
 
 
-if __name__ == '__main__':
+def verify_solution_matches_problem(problem: List[List[int]], solution: Sudoku):
+    for i in range(9):
+        for j in range(9):
+            problem_digit = problem[i][j]
+            solution_digit = solution.get_digit((i, j))
+            if problem_digit != 0 and solution_digit != problem_digit:
+                raise RuntimeError(
+                    f"The solution does not match the problem at cell {(i, j)}. "
+                    f"Expected {problem_digit}, got {solution_digit}"
+                )
+
+
+def verify_sudoku_correctness(solution: Sudoku):
+    import itertools
+    lines = {}
+    rows = {}
+    blocks = {}
+    for i in range(9):
+        for j in range(9):
+            digit = solution.get_digit((i, j))
+            lines.setdefault(i, []).append(digit)
+            rows.setdefault(j, []).append(digit)
+            blocks.setdefault(int(i / 3) * 3 + int(j / 3), []).append(digit)
+    for digit_list in itertools.chain(lines.values(), rows.values(), blocks.values()):
+        if len(digit_list) != len(set(digit_list)):
+            raise RuntimeError("The solution is invalid")
+
+
+def run_and_verify(problem):
     start_time = time.time()
     sudoku = Sudoku()
-    # sudoku.load([
-    #     [9,4,1,0,3,0,7,0,0],
-    #     [0,0,5,0,0,8,6,0,0],
-    #     [7,0,0,2,0,0,4,3,5],
-    #     [0,1,0,0,5,0,0,4,3],
-    #     [2,9,0,1,0,0,0,0,0],
-    #     [8,5,0,7,4,0,9,0,0],
-    #     [1,3,8,9,0,6,0,0,0],
-    #     [0,0,0,0,1,0,0,8,2],
-    #     [5,0,2,0,8,0,0,0,6],
-    # ])
-    # sudoku.load([
-    #     [0,5,3,0,0,0,0,0,0],
-    #     [0,0,0,0,0,0,0,6,9],
-    #     [0,0,0,7,2,0,0,0,0],
-    #     [0,0,0,0,0,0,0,9,8],
-    #     [4,0,0,6,0,0,0,0,7],
-    #     [5,0,0,4,3,0,0,0,0],
-    #     [0,0,2,5,0,6,0,0,0],
-    #     [0,0,0,0,0,8,1,0,0],
-    #     [0,8,9,0,0,7,0,0,4]
-    # ])
-    # sudoku.load([
-    #     [0,8,0,0,0,4,0,5,0],
-    #     [0,6,0,2,0,0,0,0,0],
-    #     [5,0,2,0,7,0,1,0,0],
-    #     [0,0,6,0,0,0,0,0,0],
-    #     [2,0,1,9,0,0,0,4,0],
-    #     [0,0,0,0,8,0,0,0,9],
-    #     [0,0,0,0,0,3,7,0,0],
-    #     [4,0,9,8,0,0,0,1,0],
-    #     [0,5,0,0,0,0,0,0,0]
-    # ])
-    sudoku.load([
+    sudoku.load(problem)
+    solver = Solver()
+    solved_sudoku = solver.solve(sudoku)
+    print(solved_sudoku)
+    verify_solution_matches_problem(problem, solved_sudoku)
+    verify_sudoku_correctness(solved_sudoku)
+    print()
+    end_time = time.time()
+    duration = end_time - start_time
+    print(f"Tests duration: {duration} seconds")
+    print()
+
+
+if __name__ == '__main__':
+    print("Problem easy")
+    run_and_verify([
+        [9, 4, 1, 0, 3, 0, 7, 0, 0],
+        [0, 0, 5, 0, 0, 8, 6, 0, 0],
+        [7, 0, 0, 2, 0, 0, 4, 3, 5],
+        [0, 1, 0, 0, 5, 0, 0, 4, 3],
+        [2, 9, 0, 1, 0, 0, 0, 0, 0],
+        [8, 5, 0, 7, 4, 0, 9, 0, 0],
+        [1, 3, 8, 9, 0, 6, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 8, 2],
+        [5, 0, 2, 0, 8, 0, 0, 0, 6],
+    ])
+    print("Problem medium")
+    run_and_verify([
+        [0, 5, 3, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 6, 9],
+        [0, 0, 0, 7, 2, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 9, 8],
+        [4, 0, 0, 6, 0, 0, 0, 0, 7],
+        [5, 0, 0, 4, 3, 0, 0, 0, 0],
+        [0, 0, 2, 5, 0, 6, 0, 0, 0],
+        [0, 0, 0, 0, 0, 8, 1, 0, 0],
+        [0, 8, 9, 0, 0, 7, 0, 0, 4]
+    ])
+    print("Problem hard")
+    run_and_verify([
+        [0, 8, 0, 0, 0, 4, 0, 5, 0],
+        [0, 6, 0, 2, 0, 0, 0, 0, 0],
+        [5, 0, 2, 0, 7, 0, 1, 0, 0],
+        [0, 0, 6, 0, 0, 0, 0, 0, 0],
+        [2, 0, 1, 9, 0, 0, 0, 4, 0],
+        [0, 0, 0, 0, 8, 0, 0, 0, 9],
+        [0, 0, 0, 0, 0, 3, 7, 0, 0],
+        [4, 0, 9, 8, 0, 0, 0, 1, 0],
+        [0, 5, 0, 0, 0, 0, 0, 0, 0]
+    ])
+    print("Problem master class")
+    run_and_verify([
         [8, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 3, 6, 0, 0, 0, 0, 0],
         [0, 7, 0, 0, 9, 0, 2, 0, 0],
@@ -266,10 +312,3 @@ if __name__ == '__main__':
         [0, 0, 8, 5, 0, 0, 0, 1, 0],
         [0, 9, 0, 0, 0, 0, 4, 0, 0]
     ])
-    solver = Solver()
-    solved_sudoku = solver.solve(sudoku)
-    print()
-    print(solved_sudoku)
-    end_time = time.time()
-    duration = end_time - start_time
-    print(f"Duration: {duration} seconds")
