@@ -114,6 +114,9 @@ class Cell:
 
 
 class Solver:
+    # A special value used to initiate the solution exploration
+    EXPLORATION_BOOTSTRAP = None
+
     # Resolves cells that can be resolved by pure constraint
     # returns the unresolved cells
     # Fails if the sudoku cannot be solved
@@ -176,39 +179,35 @@ class Solver:
     # resulting mutation is not necessarily the solution)
     @staticmethod
     def solve(sudoku: Sudoku) -> Sudoku:
-        # We try to resolve everything we can directly resolve
-        unresolved_cells = Solver.resolve_constrained_cells(sudoku)
+        # Use a stack to explore possibilities in depth-first search manner
+        # We push Tuple[Coords, int, Sudoku] to the stack
+        # Keeping a deep copy of the sudoku is important since resolve_constrained_cells
+        # mutates its state. It would be a lot harder to keep track of all values discovered through constraints
+        # and reset all of them
 
-        if unresolved_cells is None:
-            raise RuntimeError('Unsolvable sudoku')
-        elif len(unresolved_cells) == 0:
-            return sudoku
-        else:
-            # Use a stack to explore possibilities in depth-first search manner
-            # We push Tuple[Coords, int, Sudoku] to the stack
-            # Keeping a deep copy of the sudoku is important since resolve_constrained_cells
-            # mutates its state. It would be a lot harder to keep track of all values discovered through constraints
-            # and reset all of them
-            exploration_stack = []
-            Solver.update_exploration_stack(unresolved_cells, exploration_stack, sudoku)
+        # Init the exploration
+        exploration_stack = [Solver.EXPLORATION_BOOTSTRAP]
 
-            while len(exploration_stack) > 0:
-                coords, digit, sudoku = exploration_stack.pop()
+        while len(exploration_stack) > 0:
+            exploration_tuple = exploration_stack.pop()
+            if exploration_tuple != Solver.EXPLORATION_BOOTSTRAP:
+                coords, digit, sudoku = exploration_tuple
                 sudoku.update_value(coords, digit)
 
-                unresolved_cells = Solver.resolve_constrained_cells(sudoku)
-                if unresolved_cells is None:
-                    # This exploration led to dead end, explore another branch
-                    continue
-                elif len(unresolved_cells) == 0:
-                    # This sudoku is solved, return it
-                    return sudoku
-                else:
-                    # Otherwise, we need to continue exploration
-                    Solver.update_exploration_stack(unresolved_cells, exploration_stack, sudoku)
+            unresolved_cells = Solver.resolve_constrained_cells(sudoku)
+            if unresolved_cells is None:
+                # This exploration led to dead end, explore another branch
+                continue
+            elif len(unresolved_cells) == 0:
+                # This sudoku is solved, return it
+                return sudoku
+            else:
+                # Otherwise, we need to continue exploration
+                Solver.update_exploration_stack(unresolved_cells, exploration_stack, sudoku)
 
-            # We are out of the loop, we explored everything and could not solve
-            raise RuntimeError('Unsolvable sudoku')
+        # We are out of the loop, we explored everything and could not solve
+        raise RuntimeError('Unsolvable sudoku')
+
 
     @staticmethod
     def update_exploration_stack(unresolved_cells, exploration_stack, sudoku_before_exploration):
