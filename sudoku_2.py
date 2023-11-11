@@ -1,7 +1,8 @@
 import copy
 import time
+from abc import ABC, abstractmethod
 from array import array
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Type
 
 
 # A performant class to represent a set of digits with 9 possible values
@@ -117,6 +118,31 @@ class Solver:
     # A special value used to initiate the solution exploration
     EXPLORATION_BOOTSTRAP = None
 
+    class ExplorationTraversal(ABC):
+
+        def __init__(self):
+            self.exploration_tuples = [Solver.EXPLORATION_BOOTSTRAP]
+
+        def has_more(self) -> bool:
+            return len(self.exploration_tuples) > 0
+
+        def add(self, exploration_tuple: Tuple[Coords, int, Sudoku]):
+            self.exploration_tuples.append(exploration_tuple)
+
+        @abstractmethod
+        def next(self) -> Tuple[Coords, int, Sudoku]:
+            pass
+
+    # Depth-First-Search traversal kind
+    class DFS(ExplorationTraversal):
+        def next(self) -> Tuple[Coords, int, Sudoku]:
+            return self.exploration_tuples.pop()
+
+    # Breadth-First-Search traversal kind
+    class BFS(ExplorationTraversal):
+        def next(self) -> Tuple[Coords, int, Sudoku]:
+            return self.exploration_tuples.pop(0)
+
     # Resolves cells that can be resolved by pure constraint
     # returns the unresolved cells
     # Fails if the sudoku cannot be solved
@@ -178,18 +204,17 @@ class Solver:
     # Returns the sudoku solution (the provided sudoku is mutated but the
     # resulting mutation is not necessarily the solution)
     @staticmethod
-    def solve(sudoku: Sudoku) -> Optional[Sudoku]:
-        # Use a stack to explore possibilities in depth-first search manner
-        # We push Tuple[Coords, int, Sudoku] to the stack
+    def solve(sudoku: Sudoku, traversal_kind: Type[ExplorationTraversal] = DFS) -> Optional[Sudoku]:
+        # We push Tuple[Coords, int, Sudoku] to the exploration_traversal
         # Keeping a deep copy of the sudoku is important since resolve_constrained_cells
         # mutates its state. It would be a lot harder to keep track of all values discovered through constraints
         # and reset all of them
 
         # Init the exploration
-        exploration_stack = [Solver.EXPLORATION_BOOTSTRAP]
+        exploration_traversal = traversal_kind()
 
-        while len(exploration_stack) > 0:
-            exploration_tuple = exploration_stack.pop()
+        while exploration_traversal.has_more():
+            exploration_tuple = exploration_traversal.next()
             if exploration_tuple != Solver.EXPLORATION_BOOTSTRAP:
                 coords, digit, sudoku = exploration_tuple
                 sudoku.update_value(coords, digit)
@@ -203,18 +228,19 @@ class Solver:
                 return sudoku
             else:
                 # Otherwise, we need to continue exploration
-                Solver.update_exploration_stack(unresolved_cells, exploration_stack, sudoku)
+                Solver.update_exploration_traversal(unresolved_cells, exploration_traversal, sudoku)
 
         # We are out of the loop, we explored everything and could not solve
         return None
 
     @staticmethod
-    def update_exploration_stack(unresolved_cells, exploration_stack, sudoku_before_exploration):
+    def update_exploration_traversal(unresolved_cells, exploration_traversal: ExplorationTraversal,
+                                     sudoku_before_exploration):
         # We explore by choosing the cell presenting the least possible branches
         candidate_cell = min(unresolved_cells, key=lambda cell: len(cell.possible_digits))
         for digit in candidate_cell.possible_digits.get_digits():
             # We keep track of the sudoku state at this step of the exploration
-            exploration_stack.append((candidate_cell.coords, digit, copy.deepcopy(sudoku_before_exploration)))
+            exploration_traversal.add((candidate_cell.coords, digit, copy.deepcopy(sudoku_before_exploration)))
 
 
 def verify_solution_matches_problem(problem: List[List[int]], solution: Sudoku):
@@ -245,20 +271,25 @@ def verify_sudoku_correctness(solution: Sudoku):
             raise RuntimeError("The solution is invalid")
 
 
-def run_and_verify(problem):
+def run_and_verify_with_traversal(problem, traversal_kind):
     start_time = time.time()
     sudoku = Sudoku()
     sudoku.load(problem)
     solver = Solver()
-    solved_sudoku = solver.solve(sudoku)
+    solved_sudoku = solver.solve(sudoku, traversal_kind=traversal_kind)
     print(solved_sudoku)
     verify_solution_matches_problem(problem, solved_sudoku)
     verify_sudoku_correctness(solved_sudoku)
     print()
     end_time = time.time()
     duration = end_time - start_time
-    print(f"Tests duration: {duration} seconds")
+    print(f"Tests duration using {traversal_kind}: {duration} seconds")
     print()
+
+
+def run_and_verify(problem):
+    run_and_verify_with_traversal(problem, Solver.DFS)
+    run_and_verify_with_traversal(problem, Solver.BFS)
 
 
 if __name__ == '__main__':
