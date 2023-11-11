@@ -178,7 +178,7 @@ class Solver:
     # Returns the sudoku solution (the provided sudoku is mutated but the
     # resulting mutation is not necessarily the solution)
     @staticmethod
-    def solve(sudoku: Sudoku) -> Sudoku:
+    def solve(sudoku: Sudoku) -> Optional[Sudoku]:
         # Use a stack to explore possibilities in depth-first search manner
         # We push Tuple[Coords, int, Sudoku] to the stack
         # Keeping a deep copy of the sudoku is important since resolve_constrained_cells
@@ -206,8 +206,7 @@ class Solver:
                 Solver.update_exploration_stack(unresolved_cells, exploration_stack, sudoku)
 
         # We are out of the loop, we explored everything and could not solve
-        raise RuntimeError('Unsolvable sudoku')
-
+        return None
 
     @staticmethod
     def update_exploration_stack(unresolved_cells, exploration_stack, sudoku_before_exploration):
