@@ -22,7 +22,7 @@ class sudoku_solver(sudoku):
 
         # Solved or Error ?
         if self.solved:
-            print('solved')
+            # print('solved')
             return
 
         if self.error:
@@ -31,7 +31,7 @@ class sudoku_solver(sudoku):
 
         # No solution found
         else:
-            print('No solution found')
+            # print('No solution found')
 
             cells = map(lambda x: x, self.flatten_list(self.line_matrix) )
             cells = list(filter(lambda x: x.value == 0, cells))
@@ -74,10 +74,10 @@ class sudoku_solver(sudoku):
                             self.solved = True
                             return
 
-            self.print_matrix()
-            self.print_possibility()
-            self.print_remain_values()
-            print('----')
+            # self.print_matrix()
+            # self.print_possibility()
+            # self.print_remain_values()
+            # print('----')
 
     def solver(self):
         retry = False
@@ -88,12 +88,12 @@ class sudoku_solver(sudoku):
                 return
 
             # Check remain vs possiblity
-            possibility_values = self.flatten_list(list(map(lambda x: x.possibility, self.flatten_list(self.line_matrix))))
-            possibility_values = list(set(possibility_values))
-            for num_value in self.get_remain_values():
-                if self.remain[num_value] > 0 and not num_value in possibility_values:
-                    self.error = True
-                    return
+            # possibility_values = self.flatten_list(list(map(lambda x: x.possibility, self.flatten_list(self.line_matrix))))
+            # possibility_values = list(set(possibility_values))
+            # for num_value in self.get_remain_values():
+            #     if self.remain[num_value] > 0 and not num_value in possibility_values:
+            #         self.error = True
+            #         return
 
             # print('process_unique')
             retry = self.process_unique()
@@ -239,7 +239,7 @@ class sudoku_solver(sudoku):
         return ret_value
 
 if __name__ == '__main__':
-    test  = sudoku_solver("./examples/example_hardcore.json")
+    test  = sudoku_solver("./examples/example_evil4.json")
 
     # print("Problem easy")
     # test  = sudoku_solver(json=[

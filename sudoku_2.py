@@ -274,7 +274,7 @@ def verify_sudoku_correctness(solution: Sudoku):
 
 
 def run_and_verify_with_traversal(problem, traversal_kind):
-    start_time = time.time()
+    # start_time = time.time()
     sudoku = Sudoku()
     sudoku.load(problem)
     solver = Solver()
@@ -282,11 +282,11 @@ def run_and_verify_with_traversal(problem, traversal_kind):
     # print(solved_sudoku)
     verify_solution_matches_problem(problem, solved_sudoku)
     verify_sudoku_correctness(solved_sudoku)
-    print()
-    end_time = time.time()
-    duration = end_time - start_time
+    # print()
+    # end_time = time.time()
+    # duration = end_time - start_time
     # print(f"Tests duration using {traversal_kind}: {duration} seconds")
-    print()
+    # print()
 
 
 def run_and_verify(problem):

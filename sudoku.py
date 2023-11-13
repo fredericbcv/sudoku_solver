@@ -78,24 +78,28 @@ class sudoku(object):
         ret_list = list()
 
         for num_idx in range(9):
-            for tmp_list in [self.get_line(num_idx),self.get_row(num_idx),self.get_block(num_idx)]:
-                num_values       = list(map(lambda x: x.value, tmp_list))
-                num_values       = list(filter(lambda x: x != 0, num_values))
-                duplicates_list += self.get_duplicates(num_values)
+            if sum(list(map(lambda x: x.value, self.get_line(num_idx)))) > 45 :
+                return False, None
 
-                # Update possibility
-                possibility_list = self.flatten_list(list(map(lambda x: x.possibility, tmp_list)))
-                possibility_list = [x for x in possibility_list if possibility_list.count(x) == 1]
+
+            # for tmp_list in [self.get_line(num_idx),self.get_row(num_idx),self.get_block(num_idx)]:
+            #     num_values       = list(map(lambda x: x.value, tmp_list))
+            #     num_values       = list(filter(lambda x: x != 0, num_values))
+            #     duplicates_list += self.get_duplicates(num_values)
+
+            #     # Update possibility
+            #     possibility_list = self.flatten_list(list(map(lambda x: x.possibility, tmp_list)))
+            #     possibility_list = [x for x in possibility_list if possibility_list.count(x) == 1]
                 
-                for cell in tmp_list:
-                    for unique_possibility in possibility_list:
-                        if unique_possibility in cell.possibility:
-                            cell.possibility = [unique_possibility]
+            #     for cell in tmp_list:
+            #         for unique_possibility in possibility_list:
+            #             if unique_possibility in cell.possibility:
+            #                 cell.possibility = [unique_possibility]
 
-                if return_duplicates:
-                    for num_row in range(9):
-                        if self.get_value((num_line,num_row)) in duplicates_list:
-                            ret_list.append((num_line,num_row))
+            #     if return_duplicates:
+            #         for num_row in range(9):
+            #             if self.get_value((num_line,num_row)) in duplicates_list:
+            #                 ret_list.append((num_line,num_row))
 
         if len(duplicates_list) == 0:
             return True,None
