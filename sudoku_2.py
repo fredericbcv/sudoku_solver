@@ -267,7 +267,7 @@ def run_and_verify_with_traversal(problem, traversal_kind):
     sudoku.load(problem)
     solver = Solver()
     solved_sudoku = solver.solve(sudoku, traversal_kind=traversal_kind)
-<<<<<<< HEAD
+
     # print(solved_sudoku)
     verify_solution_matches_problem(problem, solved_sudoku)
     verify_sudoku_correctness(solved_sudoku)
@@ -276,14 +276,6 @@ def run_and_verify_with_traversal(problem, traversal_kind):
     # duration = end_time - start_time
     # print(f"Tests duration using {traversal_kind}: {duration} seconds")
     # print()
-=======
-    end_time = time.time()
-    verify_solution_matches_problem(problem, solved_sudoku)
-    verify_sudoku_correctness(solved_sudoku)
-    duration = end_time - start_time
-    print(f"Tests duration using {traversal_kind}: {duration} seconds")
->>>>>>> willy/algo_optim
-
 
 def run_and_verify(problem):
     run_and_verify_with_traversal(problem, Solver.DFS)
