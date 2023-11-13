@@ -147,6 +147,7 @@ class sudoku(object):
         return self.remain
 
     def copy(self,matrix_to_copy):
+        self.remain       = deepcopy(matrix_to_copy.remain)
         self.line_matrix  = deepcopy(matrix_to_copy.line_matrix)
         self.row_matrix = list()
         for y in range(9):

@@ -14,10 +14,11 @@ class sudoku_solver(sudoku):
     def run(self):
         # print('run')
 
+        # self.print_matrix()
+        # self.print_possibility()
+
         # Run Solver
         self.solver()
-
-        # self.print_matrix()
 
         # Solved or Error ?
         if self.solved:
@@ -73,6 +74,9 @@ class sudoku_solver(sudoku):
                             self.solved = True
                             return
 
+            self.print_matrix()
+            self.print_possibility()
+            self.print_remain_values()
             print('----')
 
     def solver(self):
@@ -235,7 +239,7 @@ class sudoku_solver(sudoku):
         return ret_value
 
 if __name__ == '__main__':
-    test  = sudoku_solver("./examples/example_evil4.json")
+    test  = sudoku_solver("./examples/example_hardcore.json")
 
     # print("Problem easy")
     # test  = sudoku_solver(json=[
