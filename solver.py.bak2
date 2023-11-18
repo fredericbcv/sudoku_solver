@@ -7,79 +7,112 @@ from itertools  import product
 
 class sudoku_solver(sudoku):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.solved = False
-        self.error = False
+        if not super(sudoku_solver, self).__init__(*args, **kwargs):
+            self.error = True
+            print('error init')
+        else:
+            self.error  = False
 
-        if self.is_error():
+        self.solved = False
+
+    def run(self):
+        # print('run')
+
+        # Run Solver
+        try:
+            self.solver()
+        except RuntimeError:
+            print('error caca')
             self.error = True
             return
 
-    def run(self,name="root"):
-        # print(name)
+        # print('Error')
+        # if not self.check_feasability():
+        #     self.error = True
+        #     return
 
-        self.solve()
-        # print('end solve')
+        # print('Solved')
+        if self.solved:
+            return
 
-        if self.is_valid():
-            self.solved = True
-            # print("/!\\ valid")
-            return True
-
-        if self.is_error():
-            self.error = True
-            # print("/!\\ error")
-            return None
-
-        # No solution found
         # print('No solution found')
-        possible_cells     = list(filter(lambda x: x.value == 0, self.matrix))
+        cells = map(lambda x: x, self.flatten_list(self.line_matrix) )
+        cells = list(filter(lambda x: x.value == 0, cells))
+        
+        possibility_len = self.flatten_list(list(map(lambda x: len(x.possibility), cells)))
 
-        # self.print_matrix()
+        # if len(possibility_len) == 0:
+        #     self.error = True
+        #     return
 
-        for len_possible in range(2,9):
-            min_possible_cell = filter(lambda x: len(x.possibility) == len_possible, possible_cells)
+        # For each possiblity len
+        for tmp_len in range(min(possibility_len),max(possibility_len)+1):
+            possibility_list = list(filter(lambda x: len(x.possibility) == tmp_len, cells))
 
-            for tmp_cell in min_possible_cell:
+            # For each cells with specific possibility len
+            for tmp_cell in possibility_list:
 
-                couple_str = '('+str(tmp_cell.line)+','+str(tmp_cell.row)+')'
+                # For each possibility value
+                for tmp_value in tmp_cell.possibility:
 
-                for value in tmp_cell.possibility:
+                    # Copy sudoku
+                    tmp_sudoku = deepcopy(self)
 
-                    # print(value)
-
-                    tmp_sudoku = deepcopy(super())
-
-                    tmp_sudoku.set_value(value,tmp_cell.line,tmp_cell.row)
-
+                    # Set value
                     try:
-                        tmp_sudoku.run(couple_str+': '+str(value))
+                        tmp_sudoku.set_value(tmp_value,tmp_cell.couple)
                     except RuntimeError:
-                        # print('ERROR')
+                        continue                    
+
+                    if not tmp_sudoku.check_feasability(): 
                         continue
 
-                    if tmp_sudoku.solved:
-                        # print('SOLVED')
-                        self.copy(tmp_sudoku)
-                        self.solved = True
-                        return
+                    # print('================')
+                    # print(tmp_cell.couple)
+                    # print(tmp_value)
+                    # tmp_sudoku.print_matrix()
+
+                    # Run solver
+                    tmp_sudoku.run()
+
+
+                    # print('----')
+                    # tmp_sudoku.print_matrix()
+                    # print(tmp_sudoku.error)
 
                     if tmp_sudoku.error:
                         continue
 
-                return
+                    # for cell in list(filter(lambda x: x.value == 0, self.flatten_list(tmp_sudoku.line_matrix))):
+                    #     print(str(cell.couple)+": "+str(cell.possibility))
 
-    def solve(self):
+                    if tmp_sudoku.solved:
+                        self.copy(tmp_sudoku)
+                        self.solved = True
+                        return
+
+                # tmp_sudoku.print_matrix()
+
+                # self.error = True
+                # return
+
+    def solver(self):
+        retry = False
+
         len_possible_cells = 9 * 81
 
+        possible_cells = list(filter(lambda x: x.value == 0, self.flatten_list(self.line_matrix)))
+
         while True:
-            self.process_unique()
-            self.process_duplicates()
 
-            if self.is_valid():
-                break
+            # print('process_unique')
+            possible_cells = self.process_unique(possible_cells)
 
-            possible_cells = list(filter(lambda x: x.value == 0, self.matrix))
+            # print('process_duplicates')
+            possible_cells = self.process_duplicates(possible_cells)
+
+            # print('process_combinations')
+            # possible_cells = self.filter_combinations(possible_cells)
 
             if len(possible_cells) < len_possible_cells:
                 len_possible_cells = len(possible_cells)
@@ -87,81 +120,84 @@ class sudoku_solver(sudoku):
 
             break
 
-    def process_unique(self):
+        # Solved ?
+        if sum(self.remain.values()) == 0:
+            self.solved = self.is_valid()
+
+    def process_unique(self, possible_cells):
         # List unique possibility
-        possible_cells = list(filter(lambda x: x.value == 0, self.matrix))
         unique_cells = list(filter(lambda x: len(x.possibility) == 1, possible_cells))
 
         for cell in unique_cells:
             if len(cell.possibility) > 0:
-                self.set_value(cell.possibility[0],cell.line,cell.row)
+                self.set_value(cell.possibility[0],cell.couple)
 
-        # Set unique per line
-        possible_cells = list(filter(lambda x: x.value == 0, possible_cells))
-        # Check unique per line
-        for line_num in range(9):
-            tmp_line_cells = list(filter(lambda x: x.line == line_num, possible_cells))
-            tmp_line_possiblity = self.flatten_list(list(map(lambda x: x.possibility, tmp_line_cells)))
+        # # Set unique per line
+        # possible_cells = list(filter(lambda x: x.value == 0, possible_cells))
+        # # Check unique per line
+        # for line_num in range(9):
+        #     tmp_line_cells = list(filter(lambda x: x.couple[0] == line_num, possible_cells))
+        #     tmp_line_possiblity = self.flatten_list(list(map(lambda x: x.possibility, tmp_line_cells)))
 
-            tmp_dict = dict()
-            for num_value in list(set(tmp_line_possiblity)):
-                tmp_dict[num_value] = tmp_line_possiblity.count(num_value)
+        #     tmp_dict = dict()
+        #     for num_value in list(set(tmp_line_possiblity)):
+        #         tmp_dict[num_value] = tmp_line_possiblity.count(num_value)
 
-            for cell in tmp_line_cells:
-                for num_value in cell.possibility:
-                    if tmp_dict[num_value] == 1:
-                        self.set_value(num_value,cell.line,cell.row)
+        #     for cell in tmp_line_cells:
+        #         for num_value in cell.possibility:
+        #             if tmp_dict[num_value] == 1:
+        #                 self.set_value(num_value,cell.couple)
 
-        # Set unique per row
-        possible_cells = list(filter(lambda x: x.value == 0, possible_cells))
-        # Check unique per line
-        for row_num in range(9):
-            tmp_line_cells = list(filter(lambda x: x.row == row_num, possible_cells))
-            tmp_line_possiblity = self.flatten_list(list(map(lambda x: x.possibility, tmp_line_cells)))
+        # # Set unique per row
+        # possible_cells = list(filter(lambda x: x.value == 0, possible_cells))
+        # # Check unique per line
+        # for row_num in range(9):
+        #     tmp_line_cells = list(filter(lambda x: x.couple[1] == row_num, possible_cells))
+        #     tmp_line_possiblity = self.flatten_list(list(map(lambda x: x.possibility, tmp_line_cells)))
 
-            tmp_dict = dict()
-            for num_value in list(set(tmp_line_possiblity)):
-                tmp_dict[num_value] = tmp_line_possiblity.count(num_value)
-
-
-            for cell in tmp_line_cells:
-                for num_value in cell.possibility:
-                    if tmp_dict[num_value] == 1:
-                        self.set_value(num_value,cell.line,cell.row)
-
-        # Set unique per block
-        possible_cells = list(filter(lambda x: x.value == 0, possible_cells))
-        for block_num in range(9):
-            tmp_line_cells = list(filter(lambda x: x.block == block_num, possible_cells))
-            tmp_line_possiblity = self.flatten_list(list(map(lambda x: x.possibility, tmp_line_cells)))
-
-            tmp_dict = dict()
-            for num_value in list(set(tmp_line_possiblity)):
-                tmp_dict[num_value] = tmp_line_possiblity.count(num_value)
-
-            for cell in tmp_line_cells:
-                for num_value in cell.possibility:
-                    if tmp_dict[num_value] == 1:
-                        self.set_value(num_value,cell.line,cell.row)
+        #     tmp_dict = dict()
+        #     for num_value in list(set(tmp_line_possiblity)):
+        #         tmp_dict[num_value] = tmp_line_possiblity.count(num_value)
 
 
-    def process_duplicates(self):
-        possible_cells = list(filter(lambda x: x.value == 0, self.matrix))
+        #     for cell in tmp_line_cells:
+        #         for num_value in cell.possibility:
+        #             if tmp_dict[num_value] == 1:
+        #                 self.set_value(num_value,cell.couple)
+
+        # # Set unique per block
+        # possible_cells = list(filter(lambda x: x.value == 0, possible_cells))
+        # for block_num in range(9):
+        #     tmp_line_cells = list(filter(lambda x: x.block_idx == block_num, possible_cells))
+        #     tmp_line_possiblity = self.flatten_list(list(map(lambda x: x.possibility, tmp_line_cells)))
+
+        #     tmp_dict = dict()
+        #     for num_value in list(set(tmp_line_possiblity)):
+        #         tmp_dict[num_value] = tmp_line_possiblity.count(num_value)
+
+        #     for cell in tmp_line_cells:
+        #         for num_value in cell.possibility:
+        #             if tmp_dict[num_value] == 1:
+        #                 self.set_value(num_value,cell.couple)
+
+        return possible_cells
+
+    def process_duplicates(self, possible_cells):
         # Filter
         for block_num in range(9):
-            possible_block = list(filter(lambda x: x.block == block_num,possible_cells))
+            possible_block = list(filter(lambda x: x.block_idx == block_num,possible_cells))
             self.filter_duplicates(possible_block)
             if self.process_duplicates_algo(possible_block): return True
         
         possible_cells = list(filter(lambda x: x.value == 0, possible_cells))
         for line_num in range(9):
-            possible_line = list(filter(lambda x: x.line == line_num,possible_cells))
+            possible_line = list(filter(lambda x: x.couple[0] == line_num,possible_cells))
             self.filter_duplicates(possible_line)
             if self.process_duplicates_algo(possible_line): return True
         
         possible_cells = list(filter(lambda x: x.value == 0, possible_cells))
         for row_num in range(9):
-            possible_row = list(filter(lambda x: x.row == row_num,possible_cells))
+            possible_row = list(filter(lambda x: x.couple[1] == row_num,possible_cells))
             self.filter_duplicates(possible_row)
             if self.process_duplicates_algo(possible_row): return True
 
@@ -207,7 +243,7 @@ class sudoku_solver(sudoku):
 
         # String possibility
         str_possibility = list(map(lambda x: str(x.possibility), duplicate_list))
-        str_possibility = list(set( [x for x in str_possibility if str_possibility.count(x) > 1] ))
+        str_possibility = list(set(self.get_duplicates(str_possibility)))
         values_possibility = self.flatten_list(list(map(lambda x: eval(x), str_possibility )))
 
         # Filter duplicates found twice
@@ -236,25 +272,12 @@ class sudoku_solver(sudoku):
                     if possibility_value in cell.possibility:
                         cell.possibility = [possibility_value]
 
-
-
-    def flatten_list(self,list_example):
-        ret_list = list()
-        for item in list_example:
-            if type(item) == list:
-                ret_list += self.flatten_list(item)
-            else:
-                ret_list.append(item)
-        return ret_list
-
 if __name__ == '__main__':
-    test  = sudoku_solver("./examples/example100.json")
-    # test  = sudoku_solver("./examples/example1.json")
-    # test  = sudoku_solver("./examples/example_hardcore.json")
+    test  = sudoku_solver("./examples/example_hardcore.json")
+    test.print_matrix()
+    print('====')
     # test  = sudoku_solver("./examples/example_evil4.json")
     # test  = sudoku_solver("./examples/example_bug.json")
-    # test.print_matrix()
-    # print('====')
 
     # print("Problem easy")
     # test  = sudoku_solver(json=[
@@ -311,26 +334,22 @@ if __name__ == '__main__':
     # test.print_matrix()
     test.run()
 
-    # print(test.solved)
+    print(test.solved)
+    print(test.error)
 
     if test.solved and not test.error:
         # print(test.is_valid())
         # test.print_remain_values()
         print('=> Solved')
-        # test.print_matrix()
+        test.print_matrix()
         # print(test.is_valid())
 
     else:
         print('=> Not solved')
-        print(test.error)
-        # test.print_matrix()
+        test.print_matrix()
         # test.print_possibility()
         # print('caca')
         # test.print_remain_values()
-
-    # test.print_remainder()
-    # test.print_possibilities()
-    # test.print_possibility_per_cell()
 
 
         # possibility_values = test.flatten_list(list(map(lambda x: x.possibility, test.flatten_list(test.line_matrix))))

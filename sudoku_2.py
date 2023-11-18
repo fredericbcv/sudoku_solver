@@ -276,9 +276,10 @@ def run_and_verify_with_traversal(problem, traversal_kind):
     # duration = end_time - start_time
     # print(f"Tests duration using {traversal_kind}: {duration} seconds")
     # print()
+    return solved_sudoku
 
 def run_and_verify(problem):
-    run_and_verify_with_traversal(problem, Solver.DFS)
+    return run_and_verify_with_traversal(problem, Solver.DFS)
     # run_and_verify_with_traversal(problem, Solver.BFS)
 
 
