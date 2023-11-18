@@ -11,7 +11,7 @@ def run_test(filepath):
     #     print('{: <32} => Solved'.format(filepath))
     # else:
     if not test.solved:
-        print('{: <32} => Not solved'.format(filepath))
+        print('{: <32} => Not solved, error = {}'.format(filepath,test.error))
     # test.print_matrix()
     # test.print_remain_values()
 

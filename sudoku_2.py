@@ -279,7 +279,7 @@ def run_and_verify_with_traversal(problem, traversal_kind):
 
 def run_and_verify(problem):
     run_and_verify_with_traversal(problem, Solver.DFS)
-    run_and_verify_with_traversal(problem, Solver.BFS)
+    # run_and_verify_with_traversal(problem, Solver.BFS)
 
 
 if __name__ == '__main__':

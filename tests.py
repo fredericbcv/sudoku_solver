@@ -14,16 +14,16 @@ def generic_test(filename,num_tuple,num_value,print_matrix=True):
         print('  => OK')
     else: 
         print('  => KO')
-    # if print_matrix:
-    #     sudoku_obj.print_matrix()
-    #     sudoku_obj.print_possibility()
-        # sudoku_obj.print_remain_values()
-        # for tmp_couple in possibility_dict.keys():
-        #     tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
-        #     if (tmp_couple[1] == 8):
-        #         print(str(tmp_couple)+": "+str(possibility_dict[tmp_couple]))
-        # print('--------------------------------')
-        # print("")
+
+    # sudoku_obj.print_matrix()
+    # sudoku_obj.print_possibility()
+    # sudoku_obj.print_remain_values()
+    # for tmp_couple in possibility_dict.keys():
+    #     tmp_block = int(tmp_couple[0]/3)*3+int(tmp_couple[1]/3)
+    #     if (tmp_couple[1] == 8):
+    #         print(str(tmp_couple)+": "+str(possibility_dict[tmp_couple]))
+    # print('--------------------------------')
+    # print("")
 
 if __name__ == '__main__':
     print('TEST1: Scan')

@@ -10,35 +10,47 @@ from copy import deepcopy
 # options_counter a implementer détecte directement les doublons
 
 class cell(object):
-    def __init__(self, couple):
+    def __init__(self, line, row):
         self.value = 0
         self.possibility = list(range(1,10))
-        self.couple = couple
-        self.block_idx = int(couple[0]/3) + 3*int(couple[1]/3)
+        self.couple = (line,row)
+        self.line = line
+        self.row  = row
+        self.block = int(line/3) + 3*int(row/3)
 
 class sudoku(object):
     def __init__(self, *args, **kwargs):        
         json_arg=kwargs.get('json', None)
 
-        # Init
-        self.line_matrix  = [ [cell((x,y)) for y in range(9)] for x in range(9) ]
-
-        self.row_matrix = list()
-        for y in range(9):
-            self.row_matrix.append(list(map(lambda line: line[y], self.line_matrix)))
-
-        self.block_matrix = list()
-        for block in range(9):
-            self.block_matrix.append(list())
+        # Init matrix
+        self.matrix = list()
         for x in range(9):
             for y in range(9):
-                self.block_matrix[int(x/3) + int(y/3)*3].append( self.line_matrix[x][y] )
+                self.matrix.append(cell(x,y))
 
+        # Init line
+        self.line_matrix = list()
+        for num_line in range(9):
+            self.line_matrix.append(list(filter(lambda x: x.line == num_line,self.matrix)))
+
+        # Init row
+        self.row_matrix = list()
+        for num_row in range(9):
+            self.row_matrix.append(list(filter(lambda y: y.row == num_row,self.matrix)))
+
+        # Init block
+        self.block_matrix = list()
+        for num_block in range(9):
+            self.block_matrix.append(list(filter(lambda b: b.block == num_block,self.matrix)))
+
+        # Init remain
         self.remain = dict()
         for num in range(1,10):
             self.remain[num] = 9
 
         self.line_possibility = [ list(range(1,10)) for x in range(9) ]
+
+        # print(self.matrix)
 
         # Load
         if json_arg != None:
@@ -64,8 +76,7 @@ class sudoku(object):
                     continue
 
                 # Check possibility conflict
-                tmp_possiblity = self.flatten_list(list(map(lambda x: x.possibility, self.line_matrix[line_num])))
-                if not num_value in tmp_possiblity:
+                if not num_value in self.flatten_list(list(map(lambda x: x.possibility, self.matrix))):
                     return False
 
 
@@ -157,7 +168,7 @@ class sudoku(object):
             if num_value in y_case.possibility:
                 if len(y_case.possibility) == 1: raise RuntimeError('Impossible sudoku')
                 y_case.possibility.remove(num_value)
-        for b_case in list(filter(lambda x: x.value == 0, self.get_block( self.line_matrix[num_line][num_row].block_idx ))):
+        for b_case in list(filter(lambda x: x.value == 0, self.get_block( self.line_matrix[num_line][num_row].block ))):
             if num_value in b_case.possibility:
                 if len(b_case.possibility) == 1: raise RuntimeError('Impossible sudoku')
                 b_case.possibility.remove(num_value)
@@ -181,22 +192,26 @@ class sudoku(object):
     def get_remain_values(self,):
         return self.remain
 
-    def copy(self,matrix_to_copy):
-        self.remain           = deepcopy(matrix_to_copy.remain)
-        self.line_possibility = deepcopy(matrix_to_copy.line_possibility)
+    def copy(self,sudoku_to_copy):
+        self.remain           = deepcopy(sudoku_to_copy.remain)
+        self.line_possibility = deepcopy(sudoku_to_copy.line_possibility)
+        self.matrix           = deepcopy(sudoku_to_copy.matrix)
 
-        self.line_matrix  = deepcopy(matrix_to_copy.line_matrix)
-        
-        self.row_matrix   = list()
-        for y in range(9):
-            self.row_matrix.append(list(map(lambda line: line[y], self.line_matrix)))
+        # Init line
+        self.line_matrix = list()
+        for num_line in range(9):
+            self.line_matrix.append(list(filter(lambda x: x.line == num_line,self.matrix)))
 
+        # Init row
+        self.row_matrix = list()
+        for num_row in range(9):
+            self.row_matrix.append(list(filter(lambda y: y.row == num_row,self.matrix)))
+
+        # Init block
         self.block_matrix = list()
-        for block in range(9):
-            self.block_matrix.append(list())
-        for x in range(9):
-            for y in range(9):
-                self.block_matrix[int(x/3) + int(y/3)*3].append( self.line_matrix[x][y] )
+        for num_block in range(9):
+            self.block_matrix.append(list(filter(lambda b: b.block == num_block,self.matrix)))
+
 
 if __name__ == '__main__':
     test  = sudoku("./examples/example_hardcore.json")
