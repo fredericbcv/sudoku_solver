@@ -134,6 +134,9 @@ class sudoku(object):
             block_cells = list(filter(lambda x: x.block == num_block,self.matrix))
             self.block.append(block_cells)
 
+    def get_value(self,x,y):
+        return self.matrix[9*x+y].value
+
     def is_valid(self):
         for x in range(9):
             if sum(map(lambda x: x.value,self.line[x])) != 45:
@@ -146,6 +149,38 @@ class sudoku(object):
                 return True
         return False
 
+    def is_bad_input(self):
+        ret_couple = list()
+
+        for num_line in range(9):
+            tmp_line = filter(lambda x: x.line == num_line, self.matrix)
+            tmp_line = list(filter(lambda x: x.value != 0, tmp_line))
+            tmp_values = list(map(lambda x: x.value, tmp_line))
+            tmp_duplicate = list(set([value for value in tmp_values if tmp_values.count(value) > 1]))
+            for cell in tmp_line:
+                if cell.value in tmp_duplicate:
+                    ret_couple.append((cell.line,cell.row))
+
+        for num_row in range(9):
+            tmp_row = filter(lambda x: x.row == num_row, self.matrix)
+            tmp_row = list(filter(lambda x: x.value != 0, tmp_row))
+            tmp_values = list(map(lambda x: x.value, tmp_row))
+            tmp_duplicate = list(set([value for value in tmp_values if tmp_values.count(value) > 1]))
+            for cell in tmp_row:
+                if cell.value in tmp_duplicate:
+                    ret_couple.append((cell.line,cell.row))
+
+        for num_block in range(9):
+            tmp_block = filter(lambda x: x.block == num_block, self.matrix)
+            tmp_block = list(filter(lambda x: x.value != 0, tmp_block))
+            tmp_values = list(map(lambda x: x.value, tmp_block))
+            tmp_duplicate = list(set([value for value in tmp_values if tmp_values.count(value) > 1]))
+            for cell in tmp_block:
+                if cell.value in tmp_duplicate:
+                    ret_couple.append((cell.line,cell.row))
+
+        return ret_couple
+
 if __name__ == '__main__':
     test  = sudoku("./examples/example_bug.json")
     # test  = sudoku("./examples/example_hardcore.json")
@@ -153,12 +188,3 @@ if __name__ == '__main__':
 
     print(test.is_valid())
     print(test.is_error())
-
-    # test.print_remainder()
-    # test.print_possibilities()
-    # test.print_possibility_per_cell()
-
-    # print(test.is_valid())
-
-    # test.print_possibility()
-    # test.print_remain_values()

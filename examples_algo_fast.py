@@ -1,23 +1,16 @@
 #!/usr/bin/python3
 
-from solver import *
+import json
+from fast_sudoku import *
 
 def run_test(filepath):
-    test = sudoku_solver(filepath)
-    test.run()
-
-    # print(filepath,end=" \t")
-    if test.solved:
-        print('{: <32} => Solved'.format(filepath))
-    # else:
-    if not test.solved:
-        print('{: <32} => Not solved, error = {}'.format(filepath,test.error))
-
-    test.print_matrix()
+    with open(filepath,'r') as file:
+        print( filepath )
+        print( run_and_verify(json.loads(file.read())) )
 
 if __name__ == '__main__':
-    run_test("examples/empty.json")
-    run_test("examples/example_bug.json")
+    # run_test("examples/empty.json")
+    # run_test("examples/example_bug.json")
     run_test("examples/example1.json")
     run_test("examples/example100.json")
     run_test("examples/example104.json")

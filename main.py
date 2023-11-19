@@ -230,31 +230,31 @@ class input_actions(GridLayout):
 
     def sudoku_solver_schedule(self, *args):
         # Create sudoku
-        sudoku_obj = sudoku()
+        sudoku_obj = sudoku_solver()
         for x in range(9):
             for y in range(9):
                 case_value = self.parent.grid.case_layout[x][y].text
-                if case_value == "":
-                    sudoku_obj.set_value(0,(x,y))
-                else:
-                    sudoku_obj.set_value(int(case_value),(x,y))
+                if case_value != "":
+                    sudoku_obj.set_value(int(case_value),x,y)
 
-        valid_grid, tuple_list = sudoku_obj.is_valid()
+        grid_error = sudoku_obj.is_error()
+        bad_input = sudoku_obj.is_bad_input()
 
         # Run solver
-        if valid_grid:
+        if not grid_error and len(bad_input) == 0:
             # Solve sudoku
-            sudoku_solver(sudoku_obj,10,False)
+            sudoku_obj.run()
 
-            # Update Grid
-            for x in range(9):
-                for y in range(9):
-                    if sudoku_obj.get_value((x,y)) != 0:
-                        self.parent.grid.case_layout[x][y].text = str(sudoku_obj.get_value((x,y)))
+            if sudoku_obj.is_valid():
+                # Update Grid
+                for x in range(9):
+                    for y in range(9):
+                        if sudoku_obj.get_value(x,y) != 0:
+                            self.parent.grid.case_layout[x][y].text = str(sudoku_obj.get_value(x,y))
 
         # Error
         else:
-            for tmp_tuple in tuple_list:
+            for tmp_tuple in bad_input:
                 self.parent.grid.case_layout[tmp_tuple[0]][tmp_tuple[1]].background_color = buttor_bg_error_color
 
     def button_released(self,instance):

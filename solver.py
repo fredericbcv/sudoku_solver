@@ -46,10 +46,7 @@ class sudoku_solver(sudoku):
 
                 for value in tmp_cell.possibility:
 
-                    # print(value)
-
-                    tmp_sudoku = deepcopy(super())
-
+                    tmp_sudoku = deepcopy(self)
                     tmp_sudoku.set_value(value,tmp_cell.line,tmp_cell.row)
 
                     try:
@@ -237,6 +234,83 @@ class sudoku_solver(sudoku):
                         cell.possibility = [possibility_value]
 
 
+# def filter_combinations(sudoku_obj,possibility_dict):
+#     ret_value = False
+
+#     for block_num in range(9):
+#         current_block_tuple = ((block_num%3),int(block_num/3))
+
+#         # Parse each line
+#         line_list = list(map(lambda x: x + int(block_num/3)*3, list(range(3))))
+
+#         for line_num in line_list:
+#             # Keep possibility in line
+#             tmp_list   = list(filter(lambda x: x[0] == line_num, possibility_dict.keys()))
+#             tmp_list   = list(filter(lambda x: block_num != int(x[0]/3)*3+int(x[1]/3), tmp_list))
+
+#             # Get values
+#             tmp_values = list(map(lambda x: possibility_dict[x], tmp_list))
+#             tmp_values = list(set(sudoku_obj.flatten_list(tmp_values)))
+
+#             # Search value not present
+#             to_remove_values = list(range(1,10))
+#             to_remove_values = list(filter(lambda x: not x in tmp_values, to_remove_values))
+
+#             # Filter num set
+#             to_remove_values = list(filter(lambda x: not x in sudoku_obj.get_line(line_num), to_remove_values))
+            
+#             if len(to_remove_values) == 0: continue
+
+#             # Values not present should be removed in others line in the current block
+#             other_line_list = list(filter(lambda x: line_num != x, line_list))
+
+#             for other_line in other_line_list:
+#                 # Filter couple to update
+#                 update_list = list(filter(lambda x: x[0] == other_line, possibility_dict.keys()))
+#                 update_list = list(filter(lambda x: block_num == int(x[0]/3)*3+int(x[1]/3), update_list))
+#                 for tmp_couple in update_list:
+#                     tmp_len = len(possibility_dict[tmp_couple])
+#                     possibility_dict[tmp_couple] = list(filter(lambda x: not x in to_remove_values, possibility_dict[tmp_couple]))
+#                     if tmp_len != len(possibility_dict[tmp_couple]):
+#                         ret_value = True
+
+#         # Parse each row
+#         row_list = list(map(lambda x: x + int(block_num%3)*3, list(range(3))))
+
+#         for row_num in row_list:
+#             # Keep possibility in line
+#             tmp_list   = list(filter(lambda x: x[1] == row_num, possibility_dict.keys()))
+#             tmp_list   = list(filter(lambda x: block_num != int(x[0]/3)*3+int(x[1]/3), tmp_list))
+
+#             # Get values
+#             tmp_values = list(map(lambda x: possibility_dict[x], tmp_list))
+#             tmp_values = list(set(sudoku_obj.flatten_list(tmp_values)))
+
+#             # Search value not present
+#             to_remove_values = list(range(1,10))
+#             to_remove_values = list(filter(lambda x: not x in tmp_values, to_remove_values))
+
+#             # Filter num set
+#             to_remove_values = list(filter(lambda x: not x in sudoku_obj.get_row(row_num), to_remove_values))
+            
+#             if len(to_remove_values) == 0: continue
+
+#             # Values not present should be removed in others line in the current block
+#             other_row_list = list(filter(lambda x: row_num != x, row_list))
+
+#             for other_row in other_row_list:
+#                 # Filter couple to update
+#                 update_list = list(filter(lambda x: x[1] == other_row, possibility_dict.keys()))
+#                 update_list = list(filter(lambda x: block_num == int(x[0]/3)*3+int(x[1]/3), update_list))
+#                 for tmp_couple in update_list:
+#                     tmp_len = len(possibility_dict[tmp_couple])
+#                     possibility_dict[tmp_couple] = list(filter(lambda x: not x in to_remove_values, possibility_dict[tmp_couple]))
+#                     if tmp_len != len(possibility_dict[tmp_couple]):
+#                         ret_value = True
+
+#         # TODO in intersection take into account unique possibility
+
+#     return ret_value
 
     def flatten_list(self,list_example):
         ret_list = list()
