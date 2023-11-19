@@ -17,7 +17,4 @@ buildozer -v android debug
 
 ## Preview
 
-![](/img/welcome.png "Welcome")
-![](/img/empty.png "Empty")
-![](/img/error.png "Error")
-![](/img/solved.png "Solved")
+<img src="/img/welcome.png" width=256 alt="Welcome"/>    <img src="/img/empty.png" width=256 alt="Empty"/>    <img src="/img/error.png" width=256 alt="Error"/>    <img src="/img/solved.png" width=256 alt="Solved"/>
