@@ -9,6 +9,8 @@ import linecache
 import os
 import tracemalloc
 
+import pickle
+
 def display_top(snapshot, key_type='lineno', limit=10):
     snapshot = snapshot.filter_traces((
         tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
@@ -43,6 +45,7 @@ class sudoku_solver(sudoku):
             return
 
     def run(self):
+        # print('run')
         self.solve()
 
         if self.is_valid():
@@ -63,7 +66,10 @@ class sudoku_solver(sudoku):
 
                 for value in tmp_cell.possibility:
 
-                    tmp_sudoku = deepcopy(self)
+                    # Create a backup copy 
+                    self_copy = pickle.dumps(self)
+                    tmp_sudoku = pickle.loads(self_copy)
+
                     tmp_sudoku.set_value(value,tmp_cell.line,tmp_cell.row)
 
                     try:
@@ -86,7 +92,7 @@ class sudoku_solver(sudoku):
 
         while True:
             self.process_unique()
-            # self.process_duplicates()
+            self.process_duplicates()
 
             if self.is_valid():
                 break
@@ -337,7 +343,7 @@ class sudoku_solver(sudoku):
 
 if __name__ == '__main__':
 
-    tracemalloc.start()
+    # tracemalloc.start()
 
     # test  = sudoku_solver("./examples/example100.json")
     # test  = sudoku_solver("./examples/example1.json")
@@ -402,37 +408,12 @@ if __name__ == '__main__':
     # test.print_matrix()
     test.run()
 
-    # print(test.solved)
-
     if test.solved and not test.error:
-        # print(test.is_valid())
-        # test.print_remain_values()
         print('=> Solved')
-        # test.print_matrix()
-        # print(test.is_valid())
 
     else:
         print('=> Not solved')
         print(test.error)
-        # test.print_matrix()
-        # test.print_possibility()
-        # print('caca')
-        # test.print_remain_values()
 
-    snapshot = tracemalloc.take_snapshot()
-    display_top(snapshot)
-
-    # test.print_remainder()
-    # test.print_possibilities()
-    # test.print_possibility_per_cell()
-
-
-        # possibility_values = test.flatten_list(list(map(lambda x: x.possibility, test.flatten_list(test.line_matrix))))
-        # possibility_values = list(set(possibility_values))
-
-        # print(possibility_values)
-
-        # for num_value in test.get_remain_values():
-        #     if test.remain[num_value] > 0 and not num_value in possibility_values:
-        #         print(num_value)
-        #         break
+    # snapshot = tracemalloc.take_snapshot()
+    # display_top(snapshot)

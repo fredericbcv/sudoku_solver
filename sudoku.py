@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
 import os, sys, json
-from copy import deepcopy
+# from copy import deepcopy, copy
+import pickle
 
 class cell(object):
     def __init__(self, line, row):
@@ -129,9 +130,9 @@ class sudoku(object):
                 print( str((x,y))+": "+str(self.matrix[x*9+y].possibility) )
 
     def copy(self,sudoku_src):
-        self.matrix = deepcopy(sudoku_src.matrix)
-        self.remainder = deepcopy(sudoku_src.remainder)
-        self.possibility = deepcopy(sudoku_src.possibility)
+        self.matrix = pickle.loads(pickle.dumps(sudoku_src.matrix))
+        self.remainder = pickle.loads(pickle.dumps(sudoku_src.remainder))
+        self.possibility = pickle.loads(pickle.dumps(sudoku_src.possibility))
 
     def get_cell(self,x,y):
         return self.matrix[9*x+y]
