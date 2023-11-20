@@ -21,21 +21,6 @@ class sudoku(object):
             for y in range(9):
                 self.matrix.append(cell(x,y))
 
-        self.line = list()
-        for num_line in range(9):
-            line_cells = list(filter(lambda x: x.line == num_line,self.matrix))
-            self.line.append(line_cells)
-
-        self.row = list()
-        for num_row in range(9):
-            row_cells = list(filter(lambda x: x.row == num_row,self.matrix))
-            self.row.append(row_cells)
-
-        self.block = list()
-        for num_block in range(9):
-            block_cells = list(filter(lambda x: x.block == num_block,self.matrix))
-            self.block.append(block_cells)
-
         self.remainder = dict()
         self.possibility = dict()
         for x in range(1,10):
@@ -59,6 +44,35 @@ class sudoku(object):
                 if json_content[x][y] != 0:
                     self.set_value(json_content[x][y],x,y)
 
+    def get_line(self,num_line):
+        return self.matrix[9*num_line:9*num_line+9]
+
+    def get_row(self,num_row):
+        return [ self.matrix[num_row],
+                 self.matrix[num_row+9],
+                 self.matrix[num_row+9*2],
+                 self.matrix[num_row+9*3],
+                 self.matrix[num_row+9*4],
+                 self.matrix[num_row+9*5],
+                 self.matrix[num_row+9*6],
+                 self.matrix[num_row+9*7],
+                 self.matrix[num_row+9*8]
+                ]
+
+    def get_block(self,num_line,num_row):
+        tmp_line = int(num_line/3)
+        tmp_row = int(num_row/3)
+        return [self.matrix[9*(3*tmp_line)  +(3*tmp_row)],
+                self.matrix[9*(3*tmp_line)  +(3*tmp_row)+1],
+                self.matrix[9*(3*tmp_line)  +(3*tmp_row)+2],
+                self.matrix[9*(3*tmp_line+1)+(3*tmp_row)],
+                self.matrix[9*(3*tmp_line+1)+(3*tmp_row)+1],
+                self.matrix[9*(3*tmp_line+1)+(3*tmp_row)+2],
+                self.matrix[9*(3*tmp_line+2)+(3*tmp_row)],
+                self.matrix[9*(3*tmp_line+2)+(3*tmp_row)+1],
+                self.matrix[9*(3*tmp_line+2)+(3*tmp_row)+2]
+                ]
+
     def set_value(self, value, num_line, num_row):
         # Set value & possibility
         self.matrix[num_line*9+num_row].value = value
@@ -68,7 +82,7 @@ class sudoku(object):
         self.remainder[value] -= 1
 
         # Update possibility in line
-        for line_cell in filter(lambda x: x.value == 0, self.line[num_line]):
+        for line_cell in filter(lambda x: x.value == 0, self.get_line(num_line)):
             if value in line_cell.possibility:
                 if len(line_cell.possibility) == 1:
                     raise RuntimeError('Impossible sudoku')
@@ -76,7 +90,7 @@ class sudoku(object):
                 self.possibility[value] -= 1
 
         # Update possibility in row
-        for row_cell in filter(lambda x: x.value == 0, self.row[num_row]):
+        for row_cell in filter(lambda x: x.value == 0, self.get_row(num_row)):
             if value in row_cell.possibility:
                 if len(row_cell.possibility) == 1:
                     raise RuntimeError('Impossible sudoku')
@@ -84,7 +98,7 @@ class sudoku(object):
                 self.possibility[value] -= 1
 
         # Update possibility in block
-        for block_cell in filter(lambda x: x.value == 0, self.block[self.get_block_idx(num_line,num_row)]):
+        for block_cell in filter(lambda x: x.value == 0, self.get_block(num_line,num_row)):
             if value in block_cell.possibility:
                 if len(block_cell.possibility) == 1:
                     raise RuntimeError('Impossible sudoku')
@@ -119,27 +133,15 @@ class sudoku(object):
         self.remainder = deepcopy(sudoku_src.remainder)
         self.possibility = deepcopy(sudoku_src.possibility)
 
-        self.line = list()
-        for num_line in range(9):
-            line_cells = list(filter(lambda x: x.line == num_line,self.matrix))
-            self.line.append(line_cells)
-
-        self.row = list()
-        for num_row in range(9):
-            row_cells = list(filter(lambda x: x.row == num_row,self.matrix))
-            self.row.append(row_cells)
-
-        self.block = list()
-        for num_block in range(9):
-            block_cells = list(filter(lambda x: x.block == num_block,self.matrix))
-            self.block.append(block_cells)
+    def get_cell(self,x,y):
+        return self.matrix[9*x+y]
 
     def get_value(self,x,y):
-        return self.matrix[9*x+y].value
+        return self.get_cell(x,y).value
 
     def is_valid(self):
         for x in range(9):
-            if sum(map(lambda x: x.value,self.line[x])) != 45:
+            if sum(map(lambda x: x.value,self.get_line(x))) != 45:
                 return False
         return True
 
@@ -153,8 +155,7 @@ class sudoku(object):
         ret_couple = list()
 
         for num_line in range(9):
-            tmp_line = filter(lambda x: x.line == num_line, self.matrix)
-            tmp_line = list(filter(lambda x: x.value != 0, tmp_line))
+            tmp_line = list(filter(lambda x: x.value != 0, self.get_line(num_line)))
             tmp_values = list(map(lambda x: x.value, tmp_line))
             tmp_duplicate = list(set([value for value in tmp_values if tmp_values.count(value) > 1]))
             for cell in tmp_line:
@@ -162,29 +163,27 @@ class sudoku(object):
                     ret_couple.append((cell.line,cell.row))
 
         for num_row in range(9):
-            tmp_row = filter(lambda x: x.row == num_row, self.matrix)
-            tmp_row = list(filter(lambda x: x.value != 0, tmp_row))
+            tmp_row = list(filter(lambda x: x.value != 0, self.get_row(num_row)))
             tmp_values = list(map(lambda x: x.value, tmp_row))
             tmp_duplicate = list(set([value for value in tmp_values if tmp_values.count(value) > 1]))
             for cell in tmp_row:
                 if cell.value in tmp_duplicate:
                     ret_couple.append((cell.line,cell.row))
 
-        for num_block in range(9):
-            tmp_block = filter(lambda x: x.block == num_block, self.matrix)
-            tmp_block = list(filter(lambda x: x.value != 0, tmp_block))
-            tmp_values = list(map(lambda x: x.value, tmp_block))
-            tmp_duplicate = list(set([value for value in tmp_values if tmp_values.count(value) > 1]))
-            for cell in tmp_block:
-                if cell.value in tmp_duplicate:
-                    ret_couple.append((cell.line,cell.row))
+        for num_block_x in range(3):
+            for num_block_y in range(3):
+                tmp_block = list(filter(lambda x: x.value != 0, self.get_block(num_block_x*3,num_block_y*3)))
+                tmp_values = list(map(lambda x: x.value, tmp_block))
+                tmp_duplicate = list(set([value for value in tmp_values if tmp_values.count(value) > 1]))
+                for cell in tmp_block:
+                    if cell.value in tmp_duplicate:
+                        ret_couple.append((cell.line,cell.row))
 
         return ret_couple
 
 if __name__ == '__main__':
-    test  = sudoku("./examples/example_bug.json")
-    # test  = sudoku("./examples/example_hardcore.json")
-    test.print_matrix()
-
-    print(test.is_valid())
-    print(test.is_error())
+    # test  = sudoku("./examples/example_bug.json")
+    test  = sudoku("./examples/example_hardcore.json")
+    # test.print_matrix()
+    # print(test.is_valid())
+    # print(test.is_error())

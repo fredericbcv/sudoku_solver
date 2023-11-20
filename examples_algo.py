@@ -16,8 +16,8 @@ def run_test(filepath):
     test.print_matrix()
 
 if __name__ == '__main__':
-    run_test("examples/empty.json")
-    run_test("examples/example_bug.json")
+    # run_test("examples/empty.json")
+    # run_test("examples/example_bug.json")
     run_test("examples/example1.json")
     run_test("examples/example100.json")
     run_test("examples/example104.json")

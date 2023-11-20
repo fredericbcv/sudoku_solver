@@ -5,6 +5,33 @@ from sudoku     import *
 from random     import *
 from itertools  import product
 
+import linecache
+import os
+import tracemalloc
+
+def display_top(snapshot, key_type='lineno', limit=10):
+    snapshot = snapshot.filter_traces((
+        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+        tracemalloc.Filter(False, "<unknown>"),
+    ))
+    top_stats = snapshot.statistics(key_type)
+
+    print("Top %s lines" % limit)
+    for index, stat in enumerate(top_stats[:limit], 1):
+        frame = stat.traceback[0]
+        print("#%s: %s:%s: %.1f KiB"
+              % (index, frame.filename, frame.lineno, stat.size / 1024))
+        line = linecache.getline(frame.filename, frame.lineno).strip()
+        if line:
+            print('    %s' % line)
+
+    other = top_stats[limit:]
+    if other:
+        size = sum(stat.size for stat in other)
+        print("%s other: %.1f KiB" % (len(other), size / 1024))
+    total = sum(stat.size for stat in top_stats)
+    print("Total allocated size: %.1f KiB" % (total / 1024))
+
 class sudoku_solver(sudoku):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -15,34 +42,24 @@ class sudoku_solver(sudoku):
             self.error = True
             return
 
-    def run(self,name="root"):
-        # print(name)
-
+    def run(self):
         self.solve()
-        # print('end solve')
 
         if self.is_valid():
             self.solved = True
-            # print("/!\\ valid")
             return True
 
         if self.is_error():
             self.error = True
-            # print("/!\\ error")
             return None
 
         # No solution found
-        # print('No solution found')
         possible_cells     = list(filter(lambda x: x.value == 0, self.matrix))
-
-        # self.print_matrix()
 
         for len_possible in range(2,9):
             min_possible_cell = filter(lambda x: len(x.possibility) == len_possible, possible_cells)
 
             for tmp_cell in min_possible_cell:
-
-                couple_str = '('+str(tmp_cell.line)+','+str(tmp_cell.row)+')'
 
                 for value in tmp_cell.possibility:
 
@@ -50,13 +67,11 @@ class sudoku_solver(sudoku):
                     tmp_sudoku.set_value(value,tmp_cell.line,tmp_cell.row)
 
                     try:
-                        tmp_sudoku.run(couple_str+': '+str(value))
+                        tmp_sudoku.run()
                     except RuntimeError:
-                        # print('ERROR')
                         continue
 
                     if tmp_sudoku.solved:
-                        # print('SOLVED')
                         self.copy(tmp_sudoku)
                         self.solved = True
                         return
@@ -71,7 +86,7 @@ class sudoku_solver(sudoku):
 
         while True:
             self.process_unique()
-            self.process_duplicates()
+            # self.process_duplicates()
 
             if self.is_valid():
                 break
@@ -140,7 +155,6 @@ class sudoku_solver(sudoku):
                 for num_value in cell.possibility:
                     if tmp_dict[num_value] == 1:
                         self.set_value(num_value,cell.line,cell.row)
-
 
     def process_duplicates(self):
         possible_cells = list(filter(lambda x: x.value == 0, self.matrix))
@@ -322,9 +336,12 @@ class sudoku_solver(sudoku):
         return ret_list
 
 if __name__ == '__main__':
-    test  = sudoku_solver("./examples/example100.json")
+
+    tracemalloc.start()
+
+    # test  = sudoku_solver("./examples/example100.json")
     # test  = sudoku_solver("./examples/example1.json")
-    # test  = sudoku_solver("./examples/example_hardcore.json")
+    test  = sudoku_solver("./examples/example_hardcore.json")
     # test  = sudoku_solver("./examples/example_evil4.json")
     # test  = sudoku_solver("./examples/example_bug.json")
     # test.print_matrix()
@@ -401,6 +418,9 @@ if __name__ == '__main__':
         # test.print_possibility()
         # print('caca')
         # test.print_remain_values()
+
+    snapshot = tracemalloc.take_snapshot()
+    display_top(snapshot)
 
     # test.print_remainder()
     # test.print_possibilities()
